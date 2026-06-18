@@ -106,25 +106,41 @@ project = QgsProject.instance()
 project.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
 # 03 - LOAD ALL NEEDED LAYERS
-
-## 03.02 Vector Layers
-### 03.02.02 Planting Block
-block_path = os.path.join(parent_dir + "/input/vector/PETAK_LC.shp")
-block_layer = QgsVectorLayer(block_path, "Blok Tanam", "ogr")
-block_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-### 03.02.03 Gap Geodatabase
+## 03.1 Gap Database
 fiona_latest_gap = fiona.listlayers(gpkg_gaps_path)[-1]
-latest_gap = 'Gaps-Detection_GPA_20260611_AR'
+# latest_gap = 'Gaps-Detection_GPA_20260611_AR'
 gap_layer = QgsVectorLayer(
-    f"{gpkg_gaps_path}|layername={latest_gap}",
+    f"{gpkg_gaps_path}|layername={fiona_latest_gap}",
     "Gap Detection",
     "ogr"
 )
-print('latest_gap: ', fiona_latest_gap)
+# print('latest_gap: ', fiona_latest_gap)
 gap_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-### 03.02.04 Gap Geodatabase
-gdb_path = r'D:\00. Geo-AI Apps\automation of gap and weed detection\database\GPA\GPA.gdb'
 
+## 03.2 Paddock
+# gdb = ogr.Open(gdb_path)
+# for i in range(gdb.GetLayerCount()):
+#     layer = gdb.GetLayerByIndex(i)
+#     print(layer.GetName())
+
+paddock_layer = QgsVectorLayer(
+    f"{gdb_path}|layername=paddock",
+    "Paddock",
+    "ogr"
+)
+paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+## 03.3 Paddock
+farm_layer = QgsVectorLayer(
+    f"{gdb_path}|layername=Farm",
+    "Farm",
+    "ogr"
+)
+farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+
+
+# print("Valid:", paddock.isValid())
 
 # 04 - PRODUCE LAYOUTING MANAGER
 manager = project.layoutManager()
@@ -213,40 +229,59 @@ def add_lineFrame(x1,y1,x2,y2,width):
 
 # 06. MAIN MAP SETTING
 ## 06.01 Setup Frame & Call All Layers
-def add_mainMap(block_layer, gap_layer):
-    
-    # 01. Add Main Map Frame
-    map = QgsLayoutItemMap(layout)
-    map.setRect(4.434, 4.515, 211.058, 200.969)  # Example values: x, y, width, height
-    map.setExtent(gap_layer.extent())
-    map.attemptResize(QgsLayoutSize(211.058, 200.969, QgsUnitTypes.LayoutMillimeters)) # width, height
-    map.attemptMove(QgsLayoutPoint(4.434, 4.515))
-    map.setFrameStrokeWidth(QgsLayoutMeasurement(0.1, QgsUnitTypes.LayoutMillimeters))
-    map.setLayers([gap_layer, block_layer])
+def add_mainMap(gap_layer, paddock_layer, farm_layer):
 
-    # 02. Show Layers
-    ## 02.01 Aerial Basemap
-    ## 02.03 Planting Block
-    block_style_path = os.path.join(parent_dir + "/input/style/Petak_LandClearing_Style.qml")
-    block_layer.loadNamedStyle(block_style_path)
-    QgsProject.instance().addMapLayer(block_layer)
-    ## 02.04 Gap Detection
-    gap_layer_style_path = os.path.join(parent_dir + "/input/style/GapsArea_Style.qml")
+    # Load the styles
+    ## Gap
+    gap_layer_style_path = (parent_dir +"/input/style/GapsArea_Style.qml")
     gap_layer.loadNamedStyle(gap_layer_style_path)
     QgsProject.instance().addMapLayer(gap_layer)
+    ## Paddock
+    paddock_layer_style_path = (parent_dir +"/input/style/Paddock_Style.qml")
+    paddock_layer.loadNamedStyle(paddock_layer_style_path)
+    QgsProject.instance().addMapLayer(paddock_layer)
+    ## Farm
+    farm_layer_style_path = (parent_dir +"/input/style/Farm_Style.qml")
+    farm_layer.loadNamedStyle(farm_layer_style_path)
+    QgsProject.instance().addMapLayer(farm_layer)
+
     
+    map_item = QgsLayoutItemMap(layout)
+    map_item.setLayers([farm_layer, gap_layer, paddock_layer])
 
+    map_item.attemptMove(
+        QgsLayoutPoint(
+            4.434,
+            4.515,
+            QgsUnitTypes.LayoutMillimeters
+        )
+    )
+
+    map_item.attemptResize(
+        QgsLayoutSize(
+            211.058,
+            200.969,
+            QgsUnitTypes.LayoutMillimeters
+        )
+    )
+
+    # IMPORTANT
     extent = gap_layer.extent()
-    scale = max(extent.width(), extent.height()) # Adjust divisor as needed
-    map.setScale(scale) 
-    map.setFrameEnabled(True) # to have a map black border
-    map.setKeepLayerSet(True)
-    map.setKeepLayerStyles(True)
+    extent.scale(1.1)      # 10% margin
+    map_item.zoomToExtent(extent)
 
-    layout.addLayoutItem(map)
-    return map
+    map_item.setFrameEnabled(True)
+    map_item.setKeepLayerSet(True)
+    map_item.setKeepLayerStyles(True)
 
-map_item = add_mainMap(block_layer, gap_layer)
+    layout.addLayoutItem(map_item)
+
+    map_item.refresh()
+
+    return map_item
+
+map_item = add_mainMap(gap_layer, paddock_layer, farm_layer)
+
 
 # 07. ADD LEGEND
 def addLegend(list_selected_layers):
