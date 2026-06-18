@@ -54,6 +54,18 @@ from datetime import date, datetime
 import os
 from osgeo import ogr
 import fiona
+import yaml
+
+CONFIG_VARIABLES = r"D:\00. Geo-AI Apps\automation of gap and weed detection\variables\qgis_layout_configuration.yaml"
+
+# ── CONFIGURATION ──────────────────────────────────────────────────────────────
+configuration_variable_path = CONFIG_VARIABLES
+with open(configuration_variable_path, 'r', encoding='utf-8') as f:
+    cfg = yaml.safe_load(f)
+
+companies_select = 'GPA'
+gdb_path              = cfg['companies'][companies_select]['gdb_path']
+gpkg_gaps_path        = cfg['companies'][companies_select]['gpkg_gaps_path']
 
 today = str(date.today())
 today_date = datetime.strptime(today, "%Y-%m-%d")
@@ -66,8 +78,6 @@ print(parent_dir)
 vect = gpd.read_file(os.path.join(parent_dir + "/input/vector/LAND_DEVELOPMENT_PROGRESS.shp"))
 date_list = list(set(vect['Date']))
 date_form = [datetime.strptime(d, "%Y-%m-%d") for d in date_list] # adjust the date format
-
-gpkg_gaps_path = r'D:\00. Geo-AI Apps\automation of gap and weed detection\database\GPA\Gaps-Detection_GPA_AR.gpkg'
 
 
 # Find the date closest to today
@@ -96,16 +106,8 @@ project = QgsProject.instance()
 project.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
 # 03 - LOAD ALL NEEDED LAYERS
-## 03.01 Recent Aerial Imagery Basemap
-basemap_path = os.path.join(parent_dir +"/input/raster/240726_Sermayam_LC.ecw")
-basemap_layer = QgsRasterLayer(basemap_path, "Aerial Basemap", "gdal")
-basemap_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
 ## 03.02 Vector Layers
-### 03.02.01 Land Development
-LD_path = os.path.join(parent_dir + "/input/vector/LAND_DEVELOPMENT_PROGRESS.shp")
-LD_layer = QgsVectorLayer(LD_path, "Mekanisasi", "ogr")
-LD_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 ### 03.02.02 Planting Block
 block_path = os.path.join(parent_dir + "/input/vector/PETAK_LC.shp")
 block_layer = QgsVectorLayer(block_path, "Blok Tanam", "ogr")
@@ -121,7 +123,7 @@ gap_layer = QgsVectorLayer(
 print('latest_gap: ', fiona_latest_gap)
 gap_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 ### 03.02.04 Gap Geodatabase
-gdb_path = 'D:\00. Geo-AI Apps\automation of gap and weed detection\database\GPA\GPA.gdb'
+gdb_path = r'D:\00. Geo-AI Apps\automation of gap and weed detection\database\GPA\GPA.gdb'
 
 
 # 04 - PRODUCE LAYOUTING MANAGER
@@ -152,11 +154,11 @@ manager.addLayout(layout)
 
 # 05 - ADD BACKGFROUND FRAME
 ## 05.01 Main Frame
-main_frame = QgsLayoutItemShape(layout)
-main_frame.setShapeType(QgsLayoutItemShape.Shape.Rectangle)
-main_frame.setRect(0,0, 218.028, 207.286)
-main_frame.attemptMove(QgsLayoutPoint(1.333, 1.416, QgsUnitTypes.LayoutMillimeters))
-layout.addLayoutItem(main_frame)
+# main_frame = QgsLayoutItemShape(layout)
+# main_frame.setShapeType(QgsLayoutItemShape.Shape.Rectangle)
+# main_frame.setRect(0,0, 218.028, 207.286)
+# main_frame.attemptMove(QgsLayoutPoint(1.333, 1.416, QgsUnitTypes.LayoutMillimeters))
+# layout.addLayoutItem(main_frame)
 
 def frame_style(width):
     simple_fill = QgsSimpleFillSymbolLayer()
@@ -167,7 +169,7 @@ def frame_style(width):
     simple_fill.setStrokeWidth(width)
     return fill_symbol
 
-main_frame.setSymbol(frame_style(width = 0.1))
+# main_frame.setSymbol(frame_style(width = 0.1))
 
 ## 05.02 Legend Frame
 legend_frame = QgsLayoutItemShape(layout)
@@ -200,37 +202,32 @@ add_lineFrame(x1 = 221.003, y1 = 194.438, x2 = 295.1, y2 = 194.438, width = 0.1)
 
 # 06. MAIN MAP SETTING
 ## 06.01 Setup Frame & Call All Layers
-def add_mainMap(basemap_layer, LD_layer, block_layer, gap_layer, scale):
+def add_mainMap(block_layer, gap_layer):
     
     # 01. Add Main Map Frame
     map = QgsLayoutItemMap(layout)
-    map.setRect(5.507, 5.307, 209.696, 199.543)  # Example values: x, y, width, height
-    map.setExtent(LD_layer.extent())
-    map.attemptResize(QgsLayoutSize(209.696, 199.543, QgsUnitTypes.LayoutMillimeters)) # width, height
-    map.attemptMove(QgsLayoutPoint(5.507, 5.307))
+    map.setRect(4.434, 4.515, 211.058, 200.969)  # Example values: x, y, width, height
+    map.setExtent(gap_layer.extent())
+    map.attemptResize(QgsLayoutSize(211.058, 200.969, QgsUnitTypes.LayoutMillimeters)) # width, height
+    map.attemptMove(QgsLayoutPoint(4.434, 4.515))
     map.setFrameStrokeWidth(QgsLayoutMeasurement(0.1, QgsUnitTypes.LayoutMillimeters))
 
-    map.setLayers([gap_layer, block_layer, LD_layer, basemap_layer])
+    map.setLayers([gap_layer, block_layer])
 
     # 02. Show Layers
     ## 02.01 Aerial Basemap
-    basemap_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-    QgsProject.instance().addMapLayer(basemap_layer, True) # On Off basemap layer
-    ## 02.02 Land Development
-    LD_style_path = os.path.join(parent_dir + "/input/style/LandDevelopment_Style.qml")
-    LD_layer.loadNamedStyle(LD_style_path)
-    QgsProject.instance().addMapLayer(LD_layer)
     ## 02.03 Planting Block
     block_style_path = os.path.join(parent_dir + "/input/style/Petak_LandClearing_Style.qml")
     block_layer.loadNamedStyle(block_style_path)
     QgsProject.instance().addMapLayer(block_layer)
     ## 02.04 Gap Detection
-    # block_style_path = os.path.join(parent_dir + "/input/style/Petak_LandClearing_Style.qml")
-    # block_layer.loadNamedStyle(block_style_path)
+    gap_layer_style_path = os.path.join(parent_dir + "/input/style/GapsArea_Style.qml")
+    gap_layer.loadNamedStyle(gap_layer_style_path)
     QgsProject.instance().addMapLayer(gap_layer)
     
 
-    scale = scale  # Fix Scale
+    extent = gap_layer.extent()
+    scale = max(extent.width(), extent.height()) # Adjust divisor as needed
     map.setScale(scale) 
     map.setFrameEnabled(True) # to have a map black border
     map.setKeepLayerSet(True)
@@ -239,38 +236,7 @@ def add_mainMap(basemap_layer, LD_layer, block_layer, gap_layer, scale):
     layout.addLayoutItem(map)
     return map
 
-map_item = add_mainMap(basemap_layer, LD_layer, block_layer, gap_layer, 15000)
-## 06.02 Setup Grid
-def add_grid (map, extent, text_size, FrameWidth, xyinterval):
-    xmin = float(round(extent.xMinimum(), 3))
-    xmax = float(round(extent.xMaximum(), 3))
-    ymin = float(round(extent.yMinimum(), 3))
-    ymax = float(round(extent.yMaximum(), 3))
-    width = round(xmax-xmin,0)
-    height = round(ymax-ymin, 0)
-    grid = QgsLayoutItemMapGrid('grid1', map)
-    map.grids().addGrid(grid)
-   
-    grid.setEnabled(True)
-    grid.setStyle(3) # Grid Type: Frame and Annotation Only
-    grid.setFrameStyle(4) # InteriorExteriorTicks = 4
-    grid.setFrameWidth(FrameWidth)
-    
-    grid.setIntervalX(xyinterval)
-    grid.setIntervalY(xyinterval)
-    grid.setAnnotationEnabled(True)
-    
-    grid.setAnnotationDirection(1,  QgsLayoutItemMapGrid.BorderSide(0))
-    grid.setAnnotationDirection(1,  QgsLayoutItemMapGrid.BorderSide(1))
-    grid.setAnnotationFrameDistance(0.5)
-
-    # Set the annotation font color to blue
-    format = QgsTextFormat()
-    format.setColor(QColor(31, 197, 215))
-    format.setSize(text_size)
-    map.grid().setAnnotationTextFormat(format)
- 
-add_grid(map = map_item, extent = LD_layer.extent(), text_size=6, FrameWidth=1, xyinterval=500)
+map_item = add_mainMap(block_layer, gap_layer)
 
 # 07. ADD LEGEND
 def addLegend(list_selected_layers):
@@ -405,7 +371,7 @@ LD_index_style_path = os.path.join(parent_dir + "/input/style/objectIndex_Style.
 LD_index.loadNamedStyle(LD_index_style_path)
 QgsProject.instance().addMapLayer(LD_index)
 
-def add_mapIndex(LD_index, basemap_layer, devArea_layer, layout):
+def add_mapIndex(LD_index, devArea_layer, layout):
 
     # Create Map Items in The Layout
     map2 = QgsLayoutItemMap(layout)
@@ -447,11 +413,11 @@ def add_mapIndex(LD_index, basemap_layer, devArea_layer, layout):
     # map2.setKeepLayerSet(True)
     # map2.setKeepLayerStyles(True)
 
-    add_grid(map = map2, extent = basemap_layer.extent(), text_size=3, FrameWidth=0.5, xyinterval=5000)
+    # add_grid(map = map2, extent = gap_layer.extent(), text_size=3, FrameWidth=0.5, xyinterval=5000)
 
     return layout.addLayoutItem(map2)
 
-add_mapIndex(LD_index, basemap_layer, devArea_layer, layout)
+add_mapIndex(LD_index, devArea_layer, layout)
 
 exporter = QgsLayoutExporter(layout)
 # exporter.exportToPdf(os.path.join(parent_dir + "/output/automation_map.pdf"), QgsLayoutExporter.PdfExportSettings())
