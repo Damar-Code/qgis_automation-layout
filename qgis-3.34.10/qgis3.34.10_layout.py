@@ -171,13 +171,24 @@ def frame_style(width):
 
 # main_frame.setSymbol(frame_style(width = 0.1))
 
-## 05.02 Legend Frame
-legend_frame = QgsLayoutItemShape(layout)
-legend_frame.setShapeType(QgsLayoutItemShape.Shape.Rectangle)
-legend_frame.setRect(0,0, 74.113, 207.286)
-legend_frame.attemptMove(QgsLayoutPoint(221.003, 1.416, QgsUnitTypes.LayoutMillimeters))
-layout.addLayoutItem(legend_frame)
-legend_frame.setSymbol(frame_style(width = 0.1))
+## 05 Map Frame
+def addFrame(x,y,width,height):
+    legend_frame = QgsLayoutItemShape(layout)
+    legend_frame.setShapeType(QgsLayoutItemShape.Shape.Rectangle)
+    legend_frame.setRect(0, 0, width,height)
+    legend_frame.attemptMove(QgsLayoutPoint(x,y, QgsUnitTypes.LayoutMillimeters))
+    layout.addLayoutItem(legend_frame)
+    return legend_frame.setSymbol(frame_style(width = 0.1))
+### 05.01 Main Map Frame for Side Information Map
+addFrame(215.484, 4.515, 76.785, 200.969)
+### 05.02 Navigation Info Frame
+addFrame(215.484, 26.559, 76.785, 19.239)
+### 05.03 Map Index
+addFrame(215.484, 162.234, 76.785, 33.077)
+
+
+
+
 
 ## 05.02 Line Frame
 def add_lineFrame(x1,y1,x2,y2,width):
@@ -191,13 +202,13 @@ def add_lineFrame(x1,y1,x2,y2,width):
     layoutItemPolyline.setSymbol(line_symbol)
 
 ### Title - North/Scale
-add_lineFrame(x1 = 221.003, y1 = 19.158, x2 = 295.1, y2 = 19.158, width = 0.1)
+# add_lineFrame(x1 = 221.003, y1 = 19.158, x2 = 295.1, y2 = 19.158, width = 0.1)
 ### North/Scale - Legend
-add_lineFrame(x1 = 221.003, y1 = 43.297, x2 = 295.1, y2 = 43.297, width = 0.1)
+# add_lineFrame(x1 = 221.003, y1 = 43.297, x2 = 295.1, y2 = 43.297, width = 0.1)
 ### Legend - Map index
-add_lineFrame(x1 = 221.003, y1 = 156.588, x2 = 295.1, y2 = 156.588, width = 0.1)
+# add_lineFrame(x1 = 221.003, y1 = 156.588, x2 = 295.1, y2 = 156.588, width = 0.1)
 ### Map index - Map Source
-add_lineFrame(x1 = 221.003, y1 = 194.438, x2 = 295.1, y2 = 194.438, width = 0.1)
+# add_lineFrame(x1 = 221.003, y1 = 194.438, x2 = 295.1, y2 = 194.438, width = 0.1)
 
 
 # 06. MAIN MAP SETTING
@@ -211,7 +222,6 @@ def add_mainMap(block_layer, gap_layer):
     map.attemptResize(QgsLayoutSize(211.058, 200.969, QgsUnitTypes.LayoutMillimeters)) # width, height
     map.attemptMove(QgsLayoutPoint(4.434, 4.515))
     map.setFrameStrokeWidth(QgsLayoutMeasurement(0.1, QgsUnitTypes.LayoutMillimeters))
-
     map.setLayers([gap_layer, block_layer])
 
     # 02. Show Layers
