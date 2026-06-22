@@ -376,12 +376,18 @@ def scaleBar():
     scalebar_item.setStyle('Single Box')
     scalebar_item.setUnits(QgsUnitTypes.DistanceMeters)
     scalebar_item.setNumberOfSegments(2)
-    scalebar_item.setUnitsPerSegment(500)
+    scalebar_item.setUnitsPerSegment(1000)
     scalebar_item.setHeight(0.7)
     scalebar_item.setLabelVerticalPlacement(QgsScaleBarSettings.LabelBelowSegment)
-    scalebar_font = QgsTextFormat()
-    scalebar_font.setFont(QFont('MS Shell Dlg 2', 3))
-    scalebar_item.setTextFormat(scalebar_font)
+
+    # Create text format
+    text_format = QgsTextFormat()
+    font = QFont('MS Shell Dlg 2', 3)  #font setting
+    text_format.setFont(font)
+    text_format.setSize(3)              
+
+    scalebar_item.setTextFormat(text_format)
+
     scalebar_item.setLabelBarSpace(1.5)
     scalebar_item.setUnitLabel('m')
     scalebar_item.attemptResize(QgsLayoutSize(33.902, 5.467, QgsUnitTypes.LayoutMillimeters)) # width, height
@@ -398,6 +404,23 @@ def scaleBar():
     # print("Segment size mode:", scalebar_item.segmentSizeMode())
 
 scaleBar()
+
+def mapCoordinateInfo():
+    main_date = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(main_date)
+    main_date.setText("Grid System \n Projection \n Datum \n Zone")
+    main_date.setHAlign(Qt.AlignCenter)
+    main_date.setVAlign(Qt.AlignVCenter)
+    main_date.attemptResize(QgsLayoutSize(40.784, 4.885, QgsUnitTypes.LayoutMillimeters)) # width, height
+    main_date.attemptMove(QgsLayoutPoint(243.713, 18.609, QgsUnitTypes.LayoutMillimeters))
+    main_date_style = QgsTextFormat()
+    main_date_style.setColor(Qt.GlobalColor.black)
+    main_date_style.setSize(8)
+    main_date.setTextFormat(main_date_style)
+    return main_date
+
+mapCoordinateInfo()
+
 
 def addLine(layout, x, y, height, width=0.3, color=QColor(0, 0, 0)):
     line = QgsLayoutItemShape(layout)
