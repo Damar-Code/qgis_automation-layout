@@ -205,7 +205,6 @@ addFrame(215.484, 162.234, 76.785, 33.077)
 
 
 
-
 ## 05.02 Line Frame
 def add_lineFrame(x1,y1,x2,y2,width):
     polygon2 = QPolygonF()
