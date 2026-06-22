@@ -32,7 +32,8 @@ from qgis.core import (
     QgsStyleProxyModel,
     QgsLayoutItemLegend,
     QgsLegendStyle,
-    QgsLayerTree
+    QgsLayerTree,
+    QgsScaleBarSettings
     )
 
 from qgis.PyQt.QtCore import (
@@ -63,29 +64,20 @@ configuration_variable_path = CONFIG_VARIABLES
 with open(configuration_variable_path, 'r', encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 
-companies_select = 'GPA'
-gdb_path              = cfg['companies'][companies_select]['gdb_path']
-gpkg_gaps_path        = cfg['companies'][companies_select]['gpkg_gaps_path']
+companies_select    = 'GPA'
+logo_path           = cfg['logo']
+map_comp_title      = cfg['comp_title']
+gdb_path            = cfg['companies'][companies_select]['gdb_path']
+gpkg_gaps_path      = cfg['companies'][companies_select]['gpkg_gaps_path']
 
 today = str(date.today())
-today_date = datetime.strptime(today, "%Y-%m-%d")
+run_days = datetime.strptime(today, "%Y-%m-%d")
 
 ## Get the Parent Directory
 script_dir  = os.path.dirname(os.path.abspath(__file__))
 parent_dir = 'D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/'
 print(parent_dir)
 
-vect = gpd.read_file(os.path.join(parent_dir + "/input/vector/LAND_DEVELOPMENT_PROGRESS.shp"))
-date_list = list(set(vect['Date']))
-date_form = [datetime.strptime(d, "%Y-%m-%d") for d in date_list] # adjust the date format
-
-
-# Find the date closest to today
-# closest_date = min(date_form, key=lambda x: abs((x - today).days))
-date_df = pandas.DataFrame({'date': date_list})
-date_df['delta_days'] = [today_date-date for date in date_form]
-run_days = date_df[date_df['delta_days'] == min(date_df['delta_days'])]['date'][0]
-print('Recent Date: ', run_days)
 
 # # 01 - INITIALIZE QGIS APPLICATION
 # QgsApplication.setPrefixPath("C:/Program Files/QGIS 3.34.3/apps/qgis", True)
@@ -194,16 +186,13 @@ def addFrame(x,y,width,height):
     legend_frame.setRect(0, 0, width,height)
     legend_frame.attemptMove(QgsLayoutPoint(x,y, QgsUnitTypes.LayoutMillimeters))
     layout.addLayoutItem(legend_frame)
-    return legend_frame.setSymbol(frame_style(width = 0.1))
+    return legend_frame.setSymbol(frame_style(width = 0.3))
 ### 05.01 Main Map Frame for Side Information Map
 addFrame(215.484, 4.515, 76.785, 200.969)
 ### 05.02 Navigation Info Frame
 addFrame(215.484, 26.559, 76.785, 19.239)
 ### 05.03 Map Index
 addFrame(215.484, 162.234, 76.785, 33.077)
-
-
-
 
 ## 05.02 Line Frame
 def add_lineFrame(x1,y1,x2,y2,width):
@@ -333,42 +322,97 @@ def addLegend(list_selected_layers):
 addLegend(list_selected_layers = ["Mekanisasi", "Blok Tanam"])
 
 # 08 - MAP TITLE
-main_title = QgsLayoutItemLabel(layout)
-layout.addLayoutItem(main_title)
-main_title.setText("PETA KERJA LAND DEVELOPMENT AUSSIE BILLET")
-main_title.setHAlign(Qt.AlignCenter)
-main_title.setVAlign(Qt.AlignVCenter)
-main_title.attemptResize(QgsLayoutSize(68.838, 18.152, QgsUnitTypes.LayoutMillimeters)) # width, height
-main_title.attemptMove(QgsLayoutPoint(223.5, 1.8, QgsUnitTypes.LayoutMillimeters))
-main_title_style = QgsTextFormat()
-main_title_style.setColor(Qt.GlobalColor.black)
-main_title_style.setSize(12)
-main_title_style.setForcedBold(True)
-main_title.setTextFormat(main_title_style)
+def mapTitle():
+    main_title = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(main_title)
+    main_title.setText(f'{map_comp_title}')
+    main_title.setHAlign(Qt.AlignCenter)
+    main_title.setVAlign(Qt.AlignVCenter)
+    main_title.attemptResize(QgsLayoutSize(54.480, 12.791, QgsUnitTypes.LayoutMillimeters)) # width, height
+    main_title.attemptMove(QgsLayoutPoint(236.865, 7.147, QgsUnitTypes.LayoutMillimeters))
+    main_title_style = QgsTextFormat()
+    main_title_style.setColor(Qt.GlobalColor.black)
+    main_title_style.setSize(10)
+    main_title_style.setForcedBold(True)
+    main_title.setTextFormat(main_title_style)
+    return main_title
+
+mapTitle()
+
+# 09 - MAP TITLE
+def mapDate():
+    main_date = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(main_date)
+    main_date.setText("As of 31 December 2025")
+    main_date.setHAlign(Qt.AlignCenter)
+    main_date.setVAlign(Qt.AlignVCenter)
+    main_date.attemptResize(QgsLayoutSize(40.784, 4.885, QgsUnitTypes.LayoutMillimeters)) # width, height
+    main_date.attemptMove(QgsLayoutPoint(243.713, 18.609, QgsUnitTypes.LayoutMillimeters))
+    main_date_style = QgsTextFormat()
+    main_date_style.setColor(Qt.GlobalColor.black)
+    main_date_style.setSize(8)
+    main_date.setTextFormat(main_date_style)
+    return main_date
+
+mapDate()
+
+# 10 - LOGO
+def mapLogo(logo_path):
+    main_logo = QgsLayoutItemPicture(layout)
+    main_logo.setPicturePath(logo_path)
+    # picture_item.setSize(100, 100) 
+    main_logo.attemptResize(QgsLayoutSize(17.020, 17.889, QgsUnitTypes.LayoutMillimeters)) # width, height
+    main_logo.attemptMove(QgsLayoutPoint(217.850, 7.425))
+    layout.addLayoutItem(main_logo)
+
+mapLogo(logo_path)
+
+# help(QgsLayoutItemScaleBar)
 
 # 09 - ADD SCALE BAR
-scalebar_item = QgsLayoutItemScaleBar(layout)
-scalebar_item.setStyle('Single Box')
-scalebar_item.setLinkedMap(map_item)
-scalebar_item.setUnits(QgsUnitTypes.DistanceMeters)
-scalebar_item.setNumberOfSegments(3)
-scalebar_item.applyDefaultSize()
-# scalebar_item.setSegmentSizeMode(100)
-# scalebar_item.applyDefaultSettings()
-# scalebar_item.setNumberOfSegmentsLeft(0)
-# scalebar_item.setUnitsPerSegment(150)
-scalebar_item.setHeight(1)
-scalebar_item.setLabelBarSpace(1.5)
-scalebar_item.setUnitLabel('m')
-# scalebar_item.setBackgroundEnabled(True)
-# scalebar_item.setBackgroundColor(QColor(255, 255, 255, 255))
-scalebar_item.update()
-scalebar_item.attemptMove(QgsLayoutPoint(237, 32.258))
+def scaleBar():
+    scalebar_item = QgsLayoutItemScaleBar(layout)
+    scalebar_item.setLinkedMap(map_item)
+    scalebar_item.setStyle('Single Box')
+    scalebar_item.setUnits(QgsUnitTypes.DistanceMeters)
+    scalebar_item.setNumberOfSegments(2)
+    scalebar_item.setUnitsPerSegment(500)
+    scalebar_item.setHeight(0.7)
+    scalebar_item.setLabelVerticalPlacement(QgsScaleBarSettings.LabelBelowSegment)
+    scalebar_font = QgsTextFormat()
+    scalebar_font.setFont(QFont('MS Shell Dlg 2', 3))
+    scalebar_item.setTextFormat(scalebar_font)
+    scalebar_item.setLabelBarSpace(1.5)
+    scalebar_item.setUnitLabel('m')
+    scalebar_item.attemptResize(QgsLayoutSize(33.902, 5.467, QgsUnitTypes.LayoutMillimeters)) # width, height
+    scalebar_item.attemptMove(QgsLayoutPoint(227.567, 31.360))
+    layout.addLayoutItem(scalebar_item)
 
-scalebar_font = QgsTextFormat()
-scalebar_font.setFont(QFont('MS Shell Dlg 2', 1))
-scalebar_item.setTextFormat(scalebar_font)
-layout.addLayoutItem(scalebar_item)
+    # print("Map scale:", map_item.scale())
+    # print("Scale bar units:", scalebar_item.units())
+    # print("Linked map:", scalebar_item.linkedMap())
+    # print(scalebar_item.linkedMap())
+
+    # print("Units per segment:", scalebar_item.unitsPerSegment())
+    # print("Number of segments:", scalebar_item.numberOfSegments())
+    # print("Segment size mode:", scalebar_item.segmentSizeMode())
+
+scaleBar()
+
+def addLine(layout, x, y, height, width=0.3, color=QColor(0, 0, 0)):
+    line = QgsLayoutItemShape(layout)
+    line.setShapeType(QgsLayoutItemShape.Rectangle)
+    line.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
+    line.attemptResize(QgsLayoutSize(width, height, QgsUnitTypes.LayoutMillimeters))
+    symbol = QgsFillSymbol.createSimple({'color': color.name(),'outline_style': 'no'})
+    line.setSymbol(symbol)
+
+    layout.addLayoutItem(line)
+
+    return line
+
+### Title - North/Scale
+addLine(layout=layout,x=262.993,y=26.559,height=19.3)
 
 # 10 - ADD NORTH ARROW
 picture_item = QgsLayoutItemPicture(layout)
