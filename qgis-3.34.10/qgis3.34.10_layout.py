@@ -33,7 +33,8 @@ from qgis.core import (
     QgsLayoutItemLegend,
     QgsLegendStyle,
     QgsLayerTree,
-    QgsScaleBarSettings
+    QgsScaleBarSettings,
+    QgsBasicNumericFormat
     )
 
 from qgis.PyQt.QtCore import (
@@ -56,6 +57,7 @@ import os
 from osgeo import ogr
 import fiona
 import yaml
+import math
 
 CONFIG_VARIABLES = r"D:\00. Geo-AI Apps\automation of gap and weed detection\variables\qgis_layout_configuration.yaml"
 
@@ -258,6 +260,11 @@ def add_mainMap(gap_layer, paddock_layer, farm_layer):
     extent.scale(1.1)      # 10% margin
     map_item.zoomToExtent(extent)
 
+    # Round up scale
+    current_scale = map_item.scale()
+    rounded_scale = math.ceil(current_scale / 1000) * 1000
+    map_item.setScale(rounded_scale)
+
     map_item.setFrameEnabled(True)
     map_item.setKeepLayerSet(True)
     map_item.setKeepLayerStyles(True)
@@ -388,7 +395,7 @@ def scaleBar():
 
     scalebar_item.setTextFormat(text_format)
 
-    scalebar_item.setLabelBarSpace(1.5)
+    scalebar_item.setLabelBarSpace(0.5)
     scalebar_item.setUnitLabel('m')
     scalebar_item.attemptResize(QgsLayoutSize(33.902, 5.467, QgsUnitTypes.LayoutMillimeters)) # width, height
     scalebar_item.attemptMove(QgsLayoutPoint(227.567, 31.360))
@@ -405,6 +412,7 @@ def scaleBar():
 
 scaleBar()
 
+# 10 - ADD SCALE BAR
 def mapCoordinateInfo():
     def coord_text_format():
         text_format = QgsTextFormat()
@@ -437,6 +445,39 @@ def mapCoordinateInfo():
     return coord_attributes, coord_values
 
 mapCoordinateInfo()
+
+# 11 - ADD SCALE NUMBER
+def scaleNumeric():
+    def coord_text_format():
+        text_format = QgsTextFormat()
+        font = QFont('MS Shell Dlg 2', 5)  #font setting
+        text_format.setFont(font)
+        text_format.setSize(5)
+        return text_format
+    
+    # Scale text
+    scale_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(scale_text)
+    scale_text.setText("SCALE")
+    scale_text.setHAlign(Qt.AlignLeft)
+    scale_text.setVAlign(Qt.AlignTop)
+    scale_text.attemptResize(QgsLayoutSize(5.394, 28.717, QgsUnitTypes.LayoutMillimeters)) # width, height
+    scale_text.attemptMove(QgsLayoutPoint(228.946, 28.717, QgsUnitTypes.LayoutMillimeters))
+    text_format = coord_text_format()
+    scale_text.setTextFormat(text_format)
+
+    
+    numericscale_item = QgsLayoutItemScaleBar(layout)
+    
+    numericscale_item.setLinkedMap(map_item)
+    numericscale_item.setStyle('Numeric')
+    numericscale_item.attemptResize(QgsLayoutSize(14.989, 4.020, QgsUnitTypes.LayoutMillimeters)) # width, height
+    numericscale_item.attemptMove(QgsLayoutPoint(235.405, 27.780, QgsUnitTypes.LayoutMillimeters))
+    numericscale_item.setTextFormat(text_format)
+    layout.addLayoutItem(numericscale_item)
+    return scale_text
+
+scaleNumeric()
 
 
 def addLine(layout, x, y, height, width=0.3, color=QColor(0, 0, 0)):
