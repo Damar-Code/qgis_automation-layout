@@ -69,6 +69,7 @@ with open(configuration_variable_path, 'r', encoding='utf-8') as f:
 companies_select    = 'GPA'
 logo_path           = cfg['logo']
 map_comp_title      = cfg['comp_title']
+north_arrow         = cfg['north_arrow']
 gdb_path            = cfg['companies'][companies_select]['gdb_path']
 gpkg_gaps_path      = cfg['companies'][companies_select]['gpkg_gaps_path']
 
@@ -481,6 +482,7 @@ scaleNumeric()
 
 
 def addLine(layout, x, y, height, width=0.3, color=QColor(0, 0, 0)):
+    
     line = QgsLayoutItemShape(layout)
     line.setShapeType(QgsLayoutItemShape.Rectangle)
     line.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
@@ -496,13 +498,31 @@ def addLine(layout, x, y, height, width=0.3, color=QColor(0, 0, 0)):
 addLine(layout=layout,x=262.993,y=26.559,height=19.3)
 
 # 10 - ADD NORTH ARROW
-picture_item = QgsLayoutItemPicture(layout)
-svg_file_path = os.path.join(parent_dir + "/input/svg/simple-wind-rose.svg")
-picture_item.setPicturePath(svg_file_path)
-# picture_item.setSize(100, 100) 
-picture_item.attemptResize(QgsLayoutSize(22.844, 20.942, QgsUnitTypes.LayoutMillimeters)) # width, height
-picture_item.attemptMove(QgsLayoutPoint(250.258, 16.5))
-layout.addLayoutItem(picture_item)
+def northArrow():
+    # Set Symbol
+    picture_item = QgsLayoutItemPicture(layout)
+    picture_item.setPicturePath(north_arrow) 
+    picture_item.attemptResize(QgsLayoutSize(8.319, 11.864, QgsUnitTypes.LayoutMillimeters)) # width, height
+    picture_item.attemptMove(QgsLayoutPoint(217.643, 33.537))
+    layout.addLayoutItem(picture_item)
+
+    # Scale N text
+    north_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(north_text)
+    north_text.setText("N")
+    north_text.setHAlign(Qt.AlignLeft)
+    north_text.setVAlign(Qt.AlignTop)
+    north_text.attemptResize(QgsLayoutSize(2.953, 4.102, QgsUnitTypes.LayoutMillimeters)) # width, height
+    north_text.attemptMove(QgsLayoutPoint(220.528, 28.137, QgsUnitTypes.LayoutMillimeters))
+    north_text_style = QgsTextFormat()
+    north_text_style.setColor(Qt.GlobalColor.black)
+    north_text_style.setSize(10)
+    north_text_style.setForcedBold(True)
+    north_text.setTextFormat(north_text_style)
+
+    return picture_item, north_text
+
+northArrow()
 
 # 11 - MAP SOURCE INFO
 def add_mapSource(layout, date):
