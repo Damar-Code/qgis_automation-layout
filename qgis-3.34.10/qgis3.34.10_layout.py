@@ -406,18 +406,35 @@ def scaleBar():
 scaleBar()
 
 def mapCoordinateInfo():
-    main_date = QgsLayoutItemLabel(layout)
-    layout.addLayoutItem(main_date)
-    main_date.setText("Grid System \n Projection \n Datum \n Zone")
-    main_date.setHAlign(Qt.AlignCenter)
-    main_date.setVAlign(Qt.AlignVCenter)
-    main_date.attemptResize(QgsLayoutSize(40.784, 4.885, QgsUnitTypes.LayoutMillimeters)) # width, height
-    main_date.attemptMove(QgsLayoutPoint(243.713, 18.609, QgsUnitTypes.LayoutMillimeters))
-    main_date_style = QgsTextFormat()
-    main_date_style.setColor(Qt.GlobalColor.black)
-    main_date_style.setSize(8)
-    main_date.setTextFormat(main_date_style)
-    return main_date
+    def coord_text_format():
+        text_format = QgsTextFormat()
+        font = QFont('MS Shell Dlg 2', 5)  #font setting
+        text_format.setFont(font)
+        text_format.setSize(5)
+        return text_format
+    
+    # Coord Attributes
+    coord_attributes = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(coord_attributes)
+    coord_attributes.setText("Grid System \nProjection \nDatum \nZone")
+    coord_attributes.setHAlign(Qt.AlignLeft)
+    coord_attributes.setVAlign(Qt.AlignTop)
+    coord_attributes.attemptResize(QgsLayoutSize(15.838, 8.305, QgsUnitTypes.LayoutMillimeters)) # width, height
+    coord_attributes.attemptMove(QgsLayoutPoint(228.946, 36.179, QgsUnitTypes.LayoutMillimeters))
+    text_format = coord_text_format()
+    coord_attributes.setTextFormat(text_format)
+    # Coord Values
+    coord_values = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(coord_values)
+    coord_values.setText(": Grid Geografis \n: UTM \n: WGS 84 \n: 54 S")
+    coord_values.setHAlign(Qt.AlignLeft)
+    coord_values.setVAlign(Qt.AlignTop)
+    coord_values.attemptResize(QgsLayoutSize(15.838, 8.305, QgsUnitTypes.LayoutMillimeters)) # width, height
+    coord_values.attemptMove(QgsLayoutPoint(245.050, 36.232, QgsUnitTypes.LayoutMillimeters))
+   
+    coord_values.setTextFormat(text_format)
+
+    return coord_attributes, coord_values
 
 mapCoordinateInfo()
 
