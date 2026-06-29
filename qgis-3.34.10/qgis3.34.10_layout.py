@@ -77,8 +77,8 @@ mapIndex_ymin       = cfg['map_index_extent'][1]
 mapIndex_xmax       = cfg['map_index_extent'][2]
 mapIndex_ymax       = cfg['map_index_extent'][3]
 
-today = str(date.today())
-run_days = datetime.strptime(today, "%Y-%m-%d")
+today = date.today()
+run_day = today.strftime("%d %B %Y")
 
 ## Get the Parent Directory
 script_dir  = os.path.dirname(os.path.abspath(__file__))
@@ -157,9 +157,16 @@ round_percentagePlant = round(percentagePlant,2)
 # print(round_percentagePlant)
 # print(round_percentagePlant+round_percentageGAP)
 
+# Photo latest and newest
+oldest_date = gapAR_database["photo_date"].min().strftime("%d %B %Y")
+newest_date = gapAR_database["photo_date"].max().strftime("%d %B %Y")
+# print(oldest_date)
+# print(newest_date)
+
+
 # Next Target
 nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
-print(nextTarget)
+# print(nextTarget)
 
 
 # print("Valid:", paddock.isValid())
@@ -392,6 +399,70 @@ def legendTitles():
 
 legendTitles()
 
+
+## Legend Main Info Values
+def legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentageGAP, round_percentagePlant):
+    
+    keyStyle = QgsTextFormat()
+    keyStyle.setColor(Qt.GlobalColor.black)
+    keyStyle.setSize(7)
+   
+    # Gap
+    gapValue_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(gapValue_text)
+    gapValue_text.setText(str(round_gapHA))
+    gapValue_text.setHAlign(Qt.AlignRight)
+    gapValue_text.setVAlign(Qt.AlignTop)
+    gapValue_text.setTextFormat(keyStyle)
+    gapValue_text.attemptMove(QgsLayoutPoint(253.244, 55, QgsUnitTypes.LayoutMillimeters))
+    gapValue_text.attemptResize(QgsLayoutSize(14.662, 3.074, QgsUnitTypes.LayoutMillimeters)) # width, height
+
+    # Growth Plant
+    growthValue_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(growthValue_text)
+    growthValue_text.setText(str(round_plantHA))
+    growthValue_text.setHAlign(Qt.AlignRight)
+    growthValue_text.setVAlign(Qt.AlignTop)
+    growthValue_text.setTextFormat(keyStyle)
+    growthValue_text.attemptMove(QgsLayoutPoint(251.870, 60.5, QgsUnitTypes.LayoutMillimeters))
+    growthValue_text.attemptResize(QgsLayoutSize(16.036, 2.913, QgsUnitTypes.LayoutMillimeters)) # width, height
+
+    # Next Target
+    nextTargetValue_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(nextTargetValue_text)
+    nextTargetValue_text.setText(str(nextTarget))
+    nextTargetValue_text.setHAlign(Qt.AlignRight)
+    nextTargetValue_text.setVAlign(Qt.AlignTop)
+    nextTargetValue_text.setTextFormat(keyStyle)
+    nextTargetValue_text.attemptMove(QgsLayoutPoint(257.871, 65.993, QgsUnitTypes.LayoutMillimeters))
+    nextTargetValue_text.attemptResize(QgsLayoutSize(9.943, 2.605, QgsUnitTypes.LayoutMillimeters)) # width, height
+
+    # Percentage Gap
+    gapValue_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(gapValue_text)
+    gapValue_text.setText(str(round_percentageGAP))
+    gapValue_text.setHAlign(Qt.AlignRight)
+    gapValue_text.setVAlign(Qt.AlignTop)
+    gapValue_text.setTextFormat(keyStyle)
+    gapValue_text.attemptMove(QgsLayoutPoint(281.835, 55, QgsUnitTypes.LayoutMillimeters))
+    gapValue_text.attemptResize(QgsLayoutSize(9.097, 3.030, QgsUnitTypes.LayoutMillimeters)) # width, height
+
+    # Percentage Growth Plant
+    growthValue_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(growthValue_text)
+    growthValue_text.setText(str(round_percentagePlant))
+    growthValue_text.setHAlign(Qt.AlignRight)
+    growthValue_text.setVAlign(Qt.AlignTop)
+    growthValue_text.setTextFormat(keyStyle)
+    growthValue_text.attemptMove(QgsLayoutPoint(275.624, 60.5, QgsUnitTypes.LayoutMillimeters))
+    growthValue_text.attemptResize(QgsLayoutSize(15.308, 2.726, QgsUnitTypes.LayoutMillimeters)) # width, height
+
+
+    return gapValue_text, growthValue_text, nextTargetValue_text
+
+legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentageGAP, round_percentagePlant)
+
+
 ## Legend Items
 def addLegendRectangle(
     layout,
@@ -454,10 +525,10 @@ def mapTitle():
 mapTitle()
 
 # 09 - MAP TITLE
-def mapDate():
+def mapDate(run_day):
     main_date = QgsLayoutItemLabel(layout)
     layout.addLayoutItem(main_date)
-    main_date.setText("As of 31 December 2025")
+    main_date.setText(f"As of {run_day}")
     main_date.setHAlign(Qt.AlignCenter)
     main_date.setVAlign(Qt.AlignVCenter)
     main_date.attemptResize(QgsLayoutSize(40.784, 4.885, QgsUnitTypes.LayoutMillimeters)) # width, height
@@ -468,7 +539,7 @@ def mapDate():
     main_date.setTextFormat(main_date_style)
     return main_date
 
-mapDate()
+mapDate(run_day)
 
 # 10 - LOGO
 def mapLogo(logo_path):
@@ -489,8 +560,18 @@ def scaleBar():
     scalebar_item.setLinkedMap(map_item)
     scalebar_item.setStyle('Single Box')
     scalebar_item.setUnits(QgsUnitTypes.DistanceMeters)
+
+    # scalebar_item.setUnitsPerSegment(1000)
+     # Automatically fit width
+    scalebar_item.setSegmentSizeMode(
+        QgsScaleBarSettings.SegmentSizeFitWidth
+    )
+
     scalebar_item.setNumberOfSegments(2)
-    scalebar_item.setUnitsPerSegment(1000)
+
+    scalebar_item.setMinimumBarWidth(28)
+    scalebar_item.setMaximumBarWidth(33)
+
     scalebar_item.setHeight(0.7)
     scalebar_item.setLabelVerticalPlacement(QgsScaleBarSettings.LabelBelowSegment)
 
@@ -664,27 +745,27 @@ def northArrow():
 northArrow()
 
 # 11 - MAP SOURCE INFO
-def add_mapSource(layout, date):
-    submber_data = QgsLayoutItemLabel(layout)
-    submber_data.setHAlign(Qt.AlignLeft)
-    submber_data.setVAlign(Qt.AlignTop)
-    submber_data_style = QgsTextFormat()
-    submber_data_style.setColor(Qt.GlobalColor.black)
-    submber_data_style.setSize(5)
-    submber_data.setText(f'SOURCE :\n' 
-                         f'1. Tracking Team Land Preparation {date}\n' 
-                         f'2. Foto Udara {date}')
-    submber_data.setTextFormat(submber_data_style)
+def add_mapSource(layout, run_day, oldest_date, newest_date):
+    mapSource = QgsLayoutItemLabel(layout)
+    mapSource.setHAlign(Qt.AlignLeft)
+    mapSource.setVAlign(Qt.AlignTop)
+    mapSource_style = QgsTextFormat()
+    mapSource_style.setColor(Qt.GlobalColor.black)
+    mapSource_style.setSize(5)
+    mapSource.setText(f'SOURCE :\n' 
+                         f'1. Gap detection analysis {run_day}\n' 
+                         f'2. Aerial photo from {oldest_date} to {newest_date}')
+    mapSource.setTextFormat(mapSource_style)
 
     #set size of label item. this step seems a little pointless to me but it doesn't work without it
-    submber_data.adjustSizeToText() 
-    submber_data.setMarginX(3)
-    submber_data.attemptMove(QgsLayoutPoint(217.850, 197.276, QgsUnitTypes.LayoutMillimeters))
-    submber_data.attemptResize(QgsLayoutSize(73.082, 6.823, QgsUnitTypes.LayoutMillimeters)) # width, height
+    mapSource.adjustSizeToText() 
+    mapSource.setMarginX(3)
+    mapSource.attemptMove(QgsLayoutPoint(217.850, 197.276, QgsUnitTypes.LayoutMillimeters))
+    mapSource.attemptResize(QgsLayoutSize(73.082, 6.823, QgsUnitTypes.LayoutMillimeters)) # width, height
 
-    layout.addLayoutItem(submber_data)
+    layout.addLayoutItem(mapSource)
 
-add_mapSource(layout, run_days)
+add_mapSource(layout, run_day, oldest_date, newest_date)
 
 # 12 - MAP INDEX
 paddockIndex_layer = QgsVectorLayer(
