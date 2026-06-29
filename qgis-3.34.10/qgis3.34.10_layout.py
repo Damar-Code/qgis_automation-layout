@@ -85,11 +85,6 @@ script_dir  = os.path.dirname(os.path.abspath(__file__))
 parent_dir = 'D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/'
 print(parent_dir)
 
-# # 01 - INITIALIZE QGIS APPLICATION
-# QgsApplication.setPrefixPath("C:/Program Files/QGIS 3.34.3/apps/qgis", True)
-# app = QgsApplication([], True)
-# QgsApplication.initQgis()
-
 # 01 - INITIALIZE QGIS APPLICATION
 QgsApplication.setPrefixPath(
     r"C:/Program Files/QGIS 3.34.10/apps/qgis",
@@ -136,6 +131,35 @@ farm_layer = QgsVectorLayer(
 )
 farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
+## Get Values
+gapAR_database = gpd.read_file(gpkg_gaps_path, layer=fiona_latest_gap)
+gdb_paddock = gpd.read_file(gdb_path, layer='paddock')
+paddock_cp = gdb_paddock[gdb_paddock['LANDUSETYP'] == 'CP']
+
+# Gap Ha
+gapHA = sum(gapAR_database[gapAR_database['cls'] == 'gaps spot']['cls_area_ha'])
+round_gapHA = round(gapHA,3)
+# print(round_gapHA)
+
+# Growth Plant Ha
+plantHA = sum(gapAR_database[gapAR_database['cls'] == 'plant']['cls_area_ha'])
+round_plantHA = round(plantHA,3)
+# print(round_plantHA)
+
+# Percentage Gap
+percentageGAP = gapHA/(gapHA + plantHA)*100
+round_percentageGAP = round(percentageGAP,2)
+# print(round_percentageGAP)
+
+# Percentage Growth Plant
+percentagePlant = plantHA/(gapHA + plantHA)*100
+round_percentagePlant = round(percentagePlant,2)
+# print(round_percentagePlant)
+# print(round_percentagePlant+round_percentageGAP)
+
+# Next Target
+nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
+print(nextTarget)
 
 
 # print("Valid:", paddock.isValid())
@@ -148,31 +172,6 @@ layout = QgsPrintLayout(project)
 layout.initializeDefaults()
 layout.setName(layout_name)
 manager.addLayout(layout)
-
-# # 04 - PRODUCE LAYOUTING MANAGER
-# manager = project.layoutManager()
-# layout_name = "Automation Map"
-
-# # Remove old layout safely
-# old_layout = manager.layoutByName(layout_name)
-
-# if old_layout is not None:
-#     manager.removeLayout(old_layout)
-
-# # Create fresh layout
-# layout = QgsPrintLayout(project)
-# layout.initializeDefaults()
-# layout.setName(layout_name)
-
-# manager.addLayout(layout)
-
-# 05 - ADD BACKGFROUND FRAME
-## 05.01 Main Frame
-# main_frame = QgsLayoutItemShape(layout)
-# main_frame.setShapeType(QgsLayoutItemShape.Shape.Rectangle)
-# main_frame.setRect(0,0, 218.028, 207.286)
-# main_frame.attemptMove(QgsLayoutPoint(1.333, 1.416, QgsUnitTypes.LayoutMillimeters))
-# layout.addLayoutItem(main_frame)
 
 def frame_style(width):
     simple_fill = QgsSimpleFillSymbolLayer()
