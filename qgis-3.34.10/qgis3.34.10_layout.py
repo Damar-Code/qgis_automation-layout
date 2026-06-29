@@ -72,10 +72,10 @@ map_comp_title      = cfg['comp_title']
 north_arrow         = cfg['north_arrow']
 gdb_path            = cfg['companies'][companies_select]['gdb_path']
 gpkg_gaps_path      = cfg['companies'][companies_select]['gpkg_gaps_path']
-mapIndex_xmin                = cfg['map_index_extent'][0]
-mapIndex_ymin                = cfg['map_index_extent'][1]
-mapIndex_xmax                = cfg['map_index_extent'][2]
-mapIndex_ymax                = cfg['map_index_extent'][3]
+mapIndex_xmin       = cfg['map_index_extent'][0]
+mapIndex_ymin       = cfg['map_index_extent'][1]
+mapIndex_xmax       = cfg['map_index_extent'][2]
+mapIndex_ymax       = cfg['map_index_extent'][3]
 
 today = str(date.today())
 run_days = datetime.strptime(today, "%Y-%m-%d")
@@ -84,7 +84,6 @@ run_days = datetime.strptime(today, "%Y-%m-%d")
 script_dir  = os.path.dirname(os.path.abspath(__file__))
 parent_dir = 'D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/'
 print(parent_dir)
-
 
 # # 01 - INITIALIZE QGIS APPLICATION
 # QgsApplication.setPrefixPath("C:/Program Files/QGIS 3.34.3/apps/qgis", True)
@@ -124,7 +123,7 @@ gap_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
 paddock_layer = QgsVectorLayer(
     f"{gdb_path}|layername=paddock",
-    "Paddock",
+    "Landuse Types",
     "ogr"
 )
 paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
@@ -132,7 +131,7 @@ paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 ## 03.3 Paddock
 farm_layer = QgsVectorLayer(
     f"{gdb_path}|layername=Farm",
-    "Farm",
+    "Farm Boundary",
     "ogr"
 )
 farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
@@ -216,13 +215,14 @@ def add_mainMap(gap_layer, paddock_layer, farm_layer):
     paddock_layer.loadNamedStyle(paddock_layer_style_path)
     QgsProject.instance().addMapLayer(paddock_layer)
     ## Farm
+    farmMain_layer = farm_layer
     farm_layer_style_path = (parent_dir +"/input/style/Farm_Style.qml")
-    farm_layer.loadNamedStyle(farm_layer_style_path)
-    QgsProject.instance().addMapLayer(farm_layer)
+    farmMain_layer.loadNamedStyle(farm_layer_style_path)
+    QgsProject.instance().addMapLayer(farmMain_layer)
 
     
     map_item = QgsLayoutItemMap(layout)
-    map_item.setLayers([farm_layer, gap_layer, paddock_layer])
+    map_item.setLayers([farmMain_layer, gap_layer, paddock_layer])
 
     map_item.attemptMove(
         QgsLayoutPoint(
@@ -263,55 +263,54 @@ def add_mainMap(gap_layer, paddock_layer, farm_layer):
 map_item = add_mainMap(gap_layer, paddock_layer, farm_layer)
 
 
-# # 07. ADD LEGEND
-# def addLegend(list_selected_layers):
-#     # Add Legend Based on Checked Layers
-#     legend = QgsLayoutItemLegend(layout)
-#     # Set the title and font style
-#     legend.setTitle("LEGEND")  # Set the title
-#     font = QgsTextFormat()
-#     font.setForcedBold(True)
-#     font.setColor(Qt.GlobalColor.black)
-#     font.setSize(8)
-#     legend.rstyle(QgsLegendStyle.Title).setTextFormat(font)
+# 07. ADD LEGEND
+def addLegend(list_selected_layers):
+    # Add Legend Based on Checked Layers
+    legend = QgsLayoutItemLegend(layout)
+    legend.setLegendFilterByMapEnabled(True) # Force to only visualize layer features within the extent
+    legend.setLinkedMap(map_item) # Force to only visualize layer features within the extent
 
-#     legend.attemptMove(QgsLayoutPoint(217.850, 46.948, QgsUnitTypes.LayoutMillimeters))
-#     legend.attemptResize(QgsLayoutSize(19.916, 3.392, QgsUnitTypes.LayoutMillimeters))
-#     legend.setBackgroundEnabled(False)
-#     legend.setAutoUpdateModel(False)  # This line is important!!
+    legend.attemptMove(QgsLayoutPoint(215.916, 69.255, QgsUnitTypes.LayoutMillimeters))
+    legend.attemptResize(QgsLayoutSize(31.936, 50.598, QgsUnitTypes.LayoutMillimeters))
+    legend.setBackgroundEnabled(False)
+    legend.setAutoUpdateModel(False)  # This line is important!!
 
-#     font = QgsTextFormat()
-#     font.setForcedBold(True)
-#     font.setColor(Qt.GlobalColor.black)
-#     font.setSize(10)
-#     legend.rstyle(QgsLegendStyle.Subgroup).setTextFormat(font)
+    font = QgsTextFormat()
+    font.setForcedBold(True)
+    font.setColor(Qt.GlobalColor.black)
+    font.setSize(7)
+    legend.rstyle(QgsLegendStyle.Subgroup).setTextFormat(font)
 
-#     # # SymbolLabel label style
-#     font = QgsTextFormat()
-#     font.setForcedBold(False)
-#     font.setColor(Qt.GlobalColor.black)
-#     font.setSize(10)
-#     legend.rstyle(QgsLegendStyle.SymbolLabel).setTextFormat(font)
+    # # SymbolLabel label style
+    font = QgsTextFormat()
+    font.setForcedBold(False)
+    font.setColor(Qt.GlobalColor.black)
+    font.setSize(7)
+    legend.rstyle(QgsLegendStyle.SymbolLabel).setTextFormat(font)
 
-#     # Get the legend model and the root group
-#     root_group  = project.layerTreeRoot()
-#     legend_model = legend.model()
-#     root_legend_group = legend_model.rootGroup()
+    # Symbol size
+    legend.setSymbolWidth(4)      # mm
+    legend.setSymbolHeight(4)     # mm
 
-#     # Remove all children from the root legend group
-#     for child in root_legend_group.children():
-#         root_legend_group.removeChildNode(child)
+    # Get the legend model and the root group
+    root_group  = project.layerTreeRoot()
+    legend_model = legend.model()
+    root_legend_group = legend_model.rootGroup()
+
+    # Remove all children from the root legend group
+    for child in root_legend_group.children():
+        root_legend_group.removeChildNode(child)
 
 
-#     for child in root_group.children():
-#         if isinstance(child, QgsLayerTreeLayer) and child.layer().name() in list_selected_layers:
-#             root_legend_group.addChildNode(child.clone())
+    for child in root_group.children():
+        if isinstance(child, QgsLayerTreeLayer) and child.layer().name() in list_selected_layers:
+            root_legend_group.addChildNode(child.clone())
 
-#     # Refresh the legend
-#     legend.adjustBoxSize()
-#     layout.addLayoutItem(legend)
+    # Refresh the legend
+    legend.adjustBoxSize()
+    layout.addLayoutItem(legend)
 
-# addLegend(list_selected_layers = ["Mekanisasi", "Blok Tanam"])
+addLegend(list_selected_layers = ["Landuse Types", "Farm Boundary"])
 
 
 ## Legend Titles
@@ -324,6 +323,7 @@ def legendTitles():
     titles.setVAlign(Qt.AlignTop)
     titles.attemptResize(QgsLayoutSize(19.916, 3.392, QgsUnitTypes.LayoutMillimeters)) # width, height
     titles.attemptMove(QgsLayoutPoint(217.850, 46.948, QgsUnitTypes.LayoutMillimeters))
+    
     titles_style = QgsTextFormat()
     titles_style.setColor(Qt.GlobalColor.black)
     titles_style.setSize(8)
@@ -688,21 +688,21 @@ def add_mapSource(layout, date):
 add_mapSource(layout, run_days)
 
 # 12 - MAP INDEX
-devArea_path = os.path.join(parent_dir + "/input/vector/Dev_Areas.shp")
-devArea_layer = QgsVectorLayer(devArea_path, "Mekanisasi", "ogr")
-devArea_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-devArea_style_path = os.path.join(parent_dir + "/input/style/DevArea_Style.qml")
-devArea_layer.loadNamedStyle(devArea_style_path)
-QgsProject.instance().addMapLayer(devArea_layer)
+paddockIndex_layer = QgsVectorLayer(
+    f"{gdb_path}|layername=paddock",
+    "Paddock",
+    "ogr"
+)
+paddockIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
-LD_path = os.path.join(parent_dir + "/input/vector/LAND_DEVELOPMENT_PROGRESS.shp")
-LD_index = QgsVectorLayer(LD_path, "Mekanisasi", "ogr")
-LD_index.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-LD_index_style_path = os.path.join(parent_dir + "/input/style/objectIndex_Style.qml")
-LD_index.loadNamedStyle(LD_index_style_path)
-QgsProject.instance().addMapLayer(LD_index)
+farmIndex_layer = QgsVectorLayer(
+    f"{gdb_path}|layername=Farm",
+    "Farm",
+    "ogr"
+)
+farmIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
-def add_mapIndex(LD_index, devArea_layer, layout):
+def add_mapIndex(farmIndex_layer, paddockIndex_layer, layout):
 
     # Create Map Items in The Layout
     map2 = QgsLayoutItemMap(layout)
@@ -716,9 +716,17 @@ def add_mapIndex(LD_index, devArea_layer, layout):
         QgsProject.instance().addMapLayer(EsriSat)
     else:
         print('invalid layer')
+    
+    farmIndex_layer_style_path = os.path.join(parent_dir + "/input/style/FarmIndex_Style.qml")
+    farmIndex_layer.loadNamedStyle(farmIndex_layer_style_path)
+    QgsProject.instance().addMapLayer(farmIndex_layer)
+    
+    paddockIndex_layer_style_path = os.path.join(parent_dir + "/input/style/PaddockIndex_Style.qml")
+    paddockIndex_layer.loadNamedStyle(paddockIndex_layer_style_path)
+    QgsProject.instance().addMapLayer(paddockIndex_layer)
 
     # Set an empty list of layers to deactivate all layers
-    map2.setLayers([LD_index, devArea_layer,EsriSat])
+    map2.setLayers([farmIndex_layer, paddockIndex_layer, EsriSat])
 
     # Calculate the new extent with double the size
     new_extent = QgsRectangle(
@@ -736,15 +744,10 @@ def add_mapIndex(LD_index, devArea_layer, layout):
     map2.setFrameStrokeWidth(QgsLayoutMeasurement(0.1, QgsUnitTypes.LayoutMillimeters))
     map2.attemptMove(QgsLayoutPoint(230.549, 166.780, QgsUnitTypes.LayoutMillimeters))
     map2.attemptResize(QgsLayoutSize(44.840, 23.984, QgsUnitTypes.LayoutMillimeters)) # width, height
-    # map2.storeCurrentLayerStyles()
-    # map2.setKeepLayerSet(True)
-    # map2.setKeepLayerStyles(True)
-
-    # add_grid(map = map2, extent = gap_layer.extent(), text_size=3, FrameWidth=0.5, xyinterval=5000)
 
     return layout.addLayoutItem(map2)
 
-add_mapIndex(LD_index, devArea_layer, layout)
+add_mapIndex(farmIndex_layer, paddockIndex_layer, layout)
 
 exporter = QgsLayoutExporter(layout)
 # exporter.exportToPdf(os.path.join(parent_dir + "/output/automation_map.pdf"), QgsLayoutExporter.PdfExportSettings())
