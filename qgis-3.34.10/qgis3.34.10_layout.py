@@ -123,6 +123,15 @@ paddock_layer = QgsVectorLayer(
 )
 paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
+paddockToponimi_layer = QgsVectorLayer(
+    f"{gdb_path}|layername=paddock",
+    "Paddock Toponimi",
+    "ogr"
+)
+paddockToponimi_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+# Filter only CP
+paddockToponimi_layer.setSubsetString("\"LANDUSETYP\" = 'CP'")
+
 ## 03.3 Paddock
 farm_layer = QgsVectorLayer(
     f"{gdb_path}|layername=Farm",
@@ -209,7 +218,7 @@ addFrame(215.484, 162.234, 76.785, 33.077)
 
 # 06. MAIN MAP SETTING
 ## 06.01 Setup Frame & Call All Layers
-def add_mainMap(gap_layer, paddock_layer, farm_layer):
+def add_mainMap(gap_layer, paddock_layer, farm_layer, paddockToponimi_layer):
 
     # Load the styles
     ## Gap
@@ -225,10 +234,14 @@ def add_mainMap(gap_layer, paddock_layer, farm_layer):
     farm_layer_style_path = (parent_dir +"/input/style/Farm_Style.qml")
     farmMain_layer.loadNamedStyle(farm_layer_style_path)
     QgsProject.instance().addMapLayer(farmMain_layer)
+    ## Paddock Toponimi
+    paddockToponimi_style_path = (parent_dir +"/input/style/PaddockTonomi_Style.qml")
+    paddockToponimi_layer.loadNamedStyle(paddockToponimi_style_path)
+    QgsProject.instance().addMapLayer(paddockToponimi_layer)
 
     
     map_item = QgsLayoutItemMap(layout)
-    map_item.setLayers([farmMain_layer, gap_layer, paddock_layer])
+    map_item.setLayers([paddockToponimi_layer, farmMain_layer, gap_layer, paddock_layer])
 
     map_item.attemptMove(
         QgsLayoutPoint(
@@ -266,15 +279,15 @@ def add_mainMap(gap_layer, paddock_layer, farm_layer):
 
     return map_item
 
-map_item = add_mainMap(gap_layer, paddock_layer, farm_layer)
+map_item = add_mainMap(gap_layer, paddock_layer, farm_layer, paddockToponimi_layer)
 
 
 # 07. ADD LEGEND
 def addLegend(list_selected_layers):
     # Add Legend Based on Checked Layers
     legend = QgsLayoutItemLegend(layout)
-    legend.setLegendFilterByMapEnabled(True) # Force to only visualize layer features within the extent
-    legend.setLinkedMap(map_item) # Force to only visualize layer features within the extent
+    # legend.setLegendFilterByMapEnabled(True) # Force to only visualize layer features within the extent
+    # legend.setLinkedMap(map_item) # Force to only visualize layer features within the extent
 
     legend.attemptMove(QgsLayoutPoint(215.916, 69.255, QgsUnitTypes.LayoutMillimeters))
     legend.attemptResize(QgsLayoutSize(31.936, 50.598, QgsUnitTypes.LayoutMillimeters))
@@ -307,16 +320,36 @@ def addLegend(list_selected_layers):
     for child in root_legend_group.children():
         root_legend_group.removeChildNode(child)
 
-
     for child in root_group.children():
+
         if isinstance(child, QgsLayerTreeLayer) and child.layer().name() in list_selected_layers:
-            root_legend_group.addChildNode(child.clone())
+
+            layer_clone = child.clone()
+
+            # Only modify the Landuse Types legend
+            if layer_clone.layer().name() == "Landuse Types":
+
+                renderer = layer_clone.layer().renderer()
+
+                categories = [
+                    cat for cat in renderer.categories()
+                    if cat.value() not in ("CP", "", None)
+                ]
+
+                layer_clone.layer().setRenderer(
+                    QgsCategorizedSymbolRenderer(
+                        renderer.classAttribute(),
+                        categories
+                    )
+                )
+
+            root_legend_group.addChildNode(layer_clone)
 
     # Refresh the legend
     legend.adjustBoxSize()
     layout.addLayoutItem(legend)
 
-addLegend(list_selected_layers = ["Landuse Types", "Farm Boundary"])
+addLegend(list_selected_layers=["Farm Boundary","Landuse Types"])
 
 
 ## Legend Titles
