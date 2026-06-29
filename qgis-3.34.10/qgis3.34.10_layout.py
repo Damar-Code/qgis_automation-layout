@@ -72,6 +72,10 @@ map_comp_title      = cfg['comp_title']
 north_arrow         = cfg['north_arrow']
 gdb_path            = cfg['companies'][companies_select]['gdb_path']
 gpkg_gaps_path      = cfg['companies'][companies_select]['gpkg_gaps_path']
+mapIndex_xmin                = cfg['map_index_extent'][0]
+mapIndex_ymin                = cfg['map_index_extent'][1]
+mapIndex_xmax                = cfg['map_index_extent'][2]
+mapIndex_ymax                = cfg['map_index_extent'][3]
 
 today = str(date.today())
 run_days = datetime.strptime(today, "%Y-%m-%d")
@@ -197,26 +201,6 @@ addFrame(215.484, 26.559, 76.785, 19.239)
 ### 05.03 Map Index
 addFrame(215.484, 162.234, 76.785, 33.077)
 
-## 05.02 Line Frame
-def add_lineFrame(x1,y1,x2,y2,width):
-    polygon2 = QPolygonF()
-    polygon2.append(QPointF(x1,y1))
-    polygon2.append(QPointF(x2,y2))
-    layoutItemPolyline = QgsLayoutItemPolyline(polygon2, layout)
-    line_symbol = QgsLineSymbol()
-    line_symbol.setWidth(width)
-    layout.addLayoutItem(layoutItemPolyline)
-    layoutItemPolyline.setSymbol(line_symbol)
-
-### Title - North/Scale
-# add_lineFrame(x1 = 221.003, y1 = 19.158, x2 = 295.1, y2 = 19.158, width = 0.1)
-### North/Scale - Legend
-# add_lineFrame(x1 = 221.003, y1 = 43.297, x2 = 295.1, y2 = 43.297, width = 0.1)
-### Legend - Map index
-# add_lineFrame(x1 = 221.003, y1 = 156.588, x2 = 295.1, y2 = 156.588, width = 0.1)
-### Map index - Map Source
-# add_lineFrame(x1 = 221.003, y1 = 194.438, x2 = 295.1, y2 = 194.438, width = 0.1)
-
 
 # 06. MAIN MAP SETTING
 ## 06.01 Setup Frame & Call All Layers
@@ -279,55 +263,178 @@ def add_mainMap(gap_layer, paddock_layer, farm_layer):
 map_item = add_mainMap(gap_layer, paddock_layer, farm_layer)
 
 
-# 07. ADD LEGEND
-def addLegend(list_selected_layers):
-    # Add Legend Based on Checked Layers
-    legend = QgsLayoutItemLegend(layout)
-    # Set the title and font style
-    legend.setTitle("Legenda")  # Set the title
-    font = QgsTextFormat()
-    font.setForcedBold(True)
-    font.setColor(Qt.GlobalColor.black)
-    font.setSize(12)
-    legend.rstyle(QgsLegendStyle.Title).setTextFormat(font)
+# # 07. ADD LEGEND
+# def addLegend(list_selected_layers):
+#     # Add Legend Based on Checked Layers
+#     legend = QgsLayoutItemLegend(layout)
+#     # Set the title and font style
+#     legend.setTitle("LEGEND")  # Set the title
+#     font = QgsTextFormat()
+#     font.setForcedBold(True)
+#     font.setColor(Qt.GlobalColor.black)
+#     font.setSize(8)
+#     legend.rstyle(QgsLegendStyle.Title).setTextFormat(font)
 
-    legend.attemptMove(QgsLayoutPoint(225, 46, QgsUnitTypes.LayoutMillimeters))
-    legend.attemptResize(QgsLayoutSize(66.000,21, QgsUnitTypes.LayoutMillimeters))
-    legend.setBackgroundEnabled(False)
-    legend.setAutoUpdateModel(False)  # This line is important!!
+#     legend.attemptMove(QgsLayoutPoint(217.850, 46.948, QgsUnitTypes.LayoutMillimeters))
+#     legend.attemptResize(QgsLayoutSize(19.916, 3.392, QgsUnitTypes.LayoutMillimeters))
+#     legend.setBackgroundEnabled(False)
+#     legend.setAutoUpdateModel(False)  # This line is important!!
 
-    font = QgsTextFormat()
-    font.setForcedBold(True)
-    font.setColor(Qt.GlobalColor.black)
-    font.setSize(10)
-    legend.rstyle(QgsLegendStyle.Subgroup).setTextFormat(font)
+#     font = QgsTextFormat()
+#     font.setForcedBold(True)
+#     font.setColor(Qt.GlobalColor.black)
+#     font.setSize(10)
+#     legend.rstyle(QgsLegendStyle.Subgroup).setTextFormat(font)
 
-    # # SymbolLabel label style
-    font = QgsTextFormat()
-    font.setForcedBold(False)
-    font.setColor(Qt.GlobalColor.black)
-    font.setSize(10)
-    legend.rstyle(QgsLegendStyle.SymbolLabel).setTextFormat(font)
+#     # # SymbolLabel label style
+#     font = QgsTextFormat()
+#     font.setForcedBold(False)
+#     font.setColor(Qt.GlobalColor.black)
+#     font.setSize(10)
+#     legend.rstyle(QgsLegendStyle.SymbolLabel).setTextFormat(font)
 
-    # Get the legend model and the root group
-    root_group  = project.layerTreeRoot()
-    legend_model = legend.model()
-    root_legend_group = legend_model.rootGroup()
+#     # Get the legend model and the root group
+#     root_group  = project.layerTreeRoot()
+#     legend_model = legend.model()
+#     root_legend_group = legend_model.rootGroup()
 
-    # Remove all children from the root legend group
-    for child in root_legend_group.children():
-        root_legend_group.removeChildNode(child)
+#     # Remove all children from the root legend group
+#     for child in root_legend_group.children():
+#         root_legend_group.removeChildNode(child)
 
 
-    for child in root_group.children():
-        if isinstance(child, QgsLayerTreeLayer) and child.layer().name() in list_selected_layers:
-            root_legend_group.addChildNode(child.clone())
+#     for child in root_group.children():
+#         if isinstance(child, QgsLayerTreeLayer) and child.layer().name() in list_selected_layers:
+#             root_legend_group.addChildNode(child.clone())
 
-    # Refresh the legend
-    legend.adjustBoxSize()
-    layout.addLayoutItem(legend)
+#     # Refresh the legend
+#     legend.adjustBoxSize()
+#     layout.addLayoutItem(legend)
 
-addLegend(list_selected_layers = ["Mekanisasi", "Blok Tanam"])
+# addLegend(list_selected_layers = ["Mekanisasi", "Blok Tanam"])
+
+
+## Legend Titles
+def legendTitles():
+    # main legend
+    titles = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(titles)
+    titles.setText("LEGEND")
+    titles.setHAlign(Qt.AlignLeft)
+    titles.setVAlign(Qt.AlignTop)
+    titles.attemptResize(QgsLayoutSize(19.916, 3.392, QgsUnitTypes.LayoutMillimeters)) # width, height
+    titles.attemptMove(QgsLayoutPoint(217.850, 46.948, QgsUnitTypes.LayoutMillimeters))
+    titles_style = QgsTextFormat()
+    titles_style.setColor(Qt.GlobalColor.black)
+    titles_style.setSize(8)
+    titles_style.setForcedBold(True)
+    titles.setTextFormat(titles_style)
+    
+    # areaHA
+    areaHA_title = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(areaHA_title)
+    areaHA_title.setText("Area (Ha)")
+    areaHA_title.setHAlign(Qt.AlignRight)
+    areaHA_title.setVAlign(Qt.AlignTop)
+    areaHA_title.attemptResize(QgsLayoutSize(12.771, 4.070, QgsUnitTypes.LayoutMillimeters)) # width, height
+    areaHA_title.attemptMove(QgsLayoutPoint(255.134, 49.284, QgsUnitTypes.LayoutMillimeters))
+    areaHA_title_style = QgsTextFormat()
+    areaHA_title_style.setColor(Qt.GlobalColor.black)
+    areaHA_title_style.setSize(7)
+    areaHA_title_style.setForcedBold(True)
+    areaHA_title.setTextFormat(areaHA_title_style)
+    
+    # percentage
+    percentage_title = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(percentage_title)
+    percentage_title.setText("Percentage (%)")
+    percentage_title.setHAlign(Qt.AlignRight)
+    percentage_title.setVAlign(Qt.AlignTop)
+    percentage_title.attemptResize(QgsLayoutSize(21.547, 3.686, QgsUnitTypes.LayoutMillimeters)) # width, height
+    percentage_title.attemptMove(QgsLayoutPoint(269.545, 49.284, QgsUnitTypes.LayoutMillimeters))
+    percentage_title.setTextFormat(areaHA_title_style)
+    
+    gap_info_syle = QgsTextFormat()
+    gap_info_syle.setColor(Qt.GlobalColor.black)
+    gap_info_syle.setSize(7)
+   
+    # Gap
+    gap_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(gap_text)
+    gap_text.setText("Gap")
+    gap_text.setHAlign(Qt.AlignLeft)
+    gap_text.setVAlign(Qt.AlignTop)
+    gap_text.setTextFormat(gap_info_syle)
+    gap_text.attemptMove(QgsLayoutPoint(224.481, 54.688, QgsUnitTypes.LayoutMillimeters))
+    gap_text.attemptResize(QgsLayoutSize(7.403, 2.882, QgsUnitTypes.LayoutMillimeters)) # width, height
+
+    # Growth Plant
+    gap_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(gap_text)
+    gap_text.setText("Growth Plant")
+    gap_text.setHAlign(Qt.AlignLeft)
+    gap_text.setVAlign(Qt.AlignTop)
+    gap_text.setTextFormat(gap_info_syle)
+    gap_text.attemptMove(QgsLayoutPoint(223.997, 60.337, QgsUnitTypes.LayoutMillimeters))
+    gap_text.attemptResize(QgsLayoutSize(18.903, 2.792, QgsUnitTypes.LayoutMillimeters)) # width, height
+
+    # Next Target
+    gap_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(gap_text)
+    gap_text.setText("Next Target")
+    gap_text.setHAlign(Qt.AlignLeft)
+    gap_text.setVAlign(Qt.AlignTop)
+    gap_text.setTextFormat(gap_info_syle)
+    gap_text.attemptMove(QgsLayoutPoint(223.997, 65.846, QgsUnitTypes.LayoutMillimeters))
+    gap_text.attemptResize(QgsLayoutSize(14.807, 2.899, QgsUnitTypes.LayoutMillimeters)) # width, height
+    
+
+    return titles, areaHA_title, percentage_title, gap_text
+
+legendTitles()
+
+## Legend Items
+def addLegendRectangle(
+    layout,
+    x,
+    y,
+    width=4,
+    height=4,
+    fill_color="#FF0000",
+    outline=False,
+):
+
+    if outline == True:
+        outline_color="#000000"
+    elif outline == False:
+        outline_color=fill_color
+    
+    rect = QgsLayoutItemShape(layout)
+    rect.setShapeType(QgsLayoutItemShape.Rectangle)
+
+    rect.attemptMove(
+        QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters)
+    )
+
+    rect.attemptResize(
+        QgsLayoutSize(width, height, QgsUnitTypes.LayoutMillimeters)
+    )
+
+    symbol = QgsFillSymbol.createSimple({
+        "color": QColor(fill_color).name(),
+        "outline_color": QColor(outline_color).name(),
+        "outline_width": "0.2",
+    })
+
+    rect.setSymbol(symbol)
+    layout.addLayoutItem(rect)
+
+    return rect
+
+## Gap Info
+addLegendRectangle(layout, x=218.000, y=53.934, fill_color="#FF0000", outline=False)
+addLegendRectangle(layout, x=218.000, y=59.809, fill_color="#33a02c", outline=False)
+addLegendRectangle(layout, x=218.000, y=65.5, fill_color="#d8d8d8", outline=False)
 
 # 08 - MAP TITLE
 def mapTitle():
@@ -456,7 +563,7 @@ def scaleNumeric():
         text_format.setSize(5)
         return text_format
     
-    # Scale text
+    # Scale text 
     scale_text = QgsLayoutItemLabel(layout)
     layout.addLayoutItem(scale_text)
     scale_text.setText("SCALE")
@@ -481,13 +588,39 @@ def scaleNumeric():
 scaleNumeric()
 
 
-def addLine(layout, x, y, height, width=0.3, color=QColor(0, 0, 0)):
-    
+def addLine(layout, x, y, length, orientation="horizontal", thickness=0.2, color=QColor(0, 0, 0)):
+
     line = QgsLayoutItemShape(layout)
     line.setShapeType(QgsLayoutItemShape.Rectangle)
+
     line.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
-    line.attemptResize(QgsLayoutSize(width, height, QgsUnitTypes.LayoutMillimeters))
-    symbol = QgsFillSymbol.createSimple({'color': color.name(),'outline_style': 'no'})
+
+    if orientation.lower() == "vertical":
+        width = thickness
+        height = length
+
+    elif orientation.lower() == "horizontal":
+        width = length
+        height = thickness
+
+    else:
+        raise ValueError(
+            "orientation must be 'vertical' or 'horizontal'"
+        )
+
+    line.attemptResize(
+        QgsLayoutSize(
+            width,
+            height,
+            QgsUnitTypes.LayoutMillimeters
+        )
+    )
+
+    symbol = QgsFillSymbol.createSimple({
+        "color": color.name(),
+        "outline_style": "no"
+    })
+
     line.setSymbol(symbol)
 
     layout.addLayoutItem(line)
@@ -495,7 +628,14 @@ def addLine(layout, x, y, height, width=0.3, color=QColor(0, 0, 0)):
     return line
 
 ### Title - North/Scale
-addLine(layout=layout,x=262.993,y=26.559,height=19.3)
+addLine(layout=layout, x=262.993, y=26.559, length=19.3, orientation="vertical")
+
+### Frame for Gap Precentage
+addLine(layout=layout, x=218, y=58.888, length=74.269, orientation="horizontal")
+addLine(layout=layout, x=218, y=64.545, length=74.269, orientation="horizontal")
+addLine(layout=layout, x=218, y=70.2, length=51.168, orientation="horizontal")
+addLine(layout=layout, x=247.245, y=54.079, length=16.3, orientation="vertical")
+addLine(layout=layout, x=269.166, y=53.934, length=16.465, orientation="vertical")
 
 # 10 - ADD NORTH ARROW
 def northArrow():
@@ -527,10 +667,12 @@ northArrow()
 # 11 - MAP SOURCE INFO
 def add_mapSource(layout, date):
     submber_data = QgsLayoutItemLabel(layout)
+    submber_data.setHAlign(Qt.AlignLeft)
+    submber_data.setVAlign(Qt.AlignTop)
     submber_data_style = QgsTextFormat()
     submber_data_style.setColor(Qt.GlobalColor.black)
-    submber_data_style.setSize(8)
-    submber_data.setText(f'Sumber Data:\n' 
+    submber_data_style.setSize(5)
+    submber_data.setText(f'SOURCE :\n' 
                          f'1. Tracking Team Land Preparation {date}\n' 
                          f'2. Foto Udara {date}')
     submber_data.setTextFormat(submber_data_style)
@@ -538,8 +680,8 @@ def add_mapSource(layout, date):
     #set size of label item. this step seems a little pointless to me but it doesn't work without it
     submber_data.adjustSizeToText() 
     submber_data.setMarginX(3)
-    submber_data.attemptMove(QgsLayoutPoint(221.5, 196.905, QgsUnitTypes.LayoutMillimeters))
-    submber_data.attemptResize(QgsLayoutSize(75.937, 11.287, QgsUnitTypes.LayoutMillimeters)) # width, height
+    submber_data.attemptMove(QgsLayoutPoint(217.850, 197.276, QgsUnitTypes.LayoutMillimeters))
+    submber_data.attemptResize(QgsLayoutSize(73.082, 6.823, QgsUnitTypes.LayoutMillimeters)) # width, height
 
     layout.addLayoutItem(submber_data)
 
@@ -567,10 +709,6 @@ def add_mapIndex(LD_index, devArea_layer, layout):
     map2.setRect(10,10,10,10)
     map2.setCrs(QgsCoordinateReferenceSystem('EPSG:32754'))
 
-    layer_extent = devArea_layer.extent()
-    layer_extent.grow(10000) # pass a sensible value depending on crs used and map scale
-    map2.zoomToExtent(layer_extent)
-
     urlWithParams = 'type=xyz&url=https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
     EsriSat = QgsRasterLayer(urlWithParams, 'OpenStreetMap', 'wms')  
 
@@ -582,22 +720,22 @@ def add_mapIndex(LD_index, devArea_layer, layout):
     # Set an empty list of layers to deactivate all layers
     map2.setLayers([LD_index, devArea_layer,EsriSat])
 
-    # # Calculate the new extent with double the size
-    # new_extent = QgsRectangle(
-    #     layer_extent.xMinimum(), #- layer_extent.width() / 1,
-    #     layer_extent.yMinimum(), #- layer_extent.height() / 1,
-    #     layer_extent.xMaximum(), #+ layer_extent.width() / 1,
-    #     layer_extent.yMaximum() #+ layer_extent.height() / 1
-    # )
+    # Calculate the new extent with double the size
+    new_extent = QgsRectangle(
+        mapIndex_xmin, # xmin
+        mapIndex_ymin, # ymin
+        mapIndex_xmax, # xmax
+        mapIndex_ymax # ymax
+    )
 
-    # # Set the new extent for the map item
-    # map2.setExtent(new_extent)layoutsetTitle
+    # Set the new extent for the map item
+    map2.setExtent(new_extent)
 
     #map.setBackgroundColor(QColor(255,255,255, 0))layout
     map2.setFrameEnabled(True)
     map2.setFrameStrokeWidth(QgsLayoutMeasurement(0.1, QgsUnitTypes.LayoutMillimeters))
-    map2.attemptMove(QgsLayoutPoint(223.5, 159.3, QgsUnitTypes.LayoutMillimeters))
-    map2.attemptResize(QgsLayoutSize(68.8, 32.5, QgsUnitTypes.LayoutMillimeters)) # width, height
+    map2.attemptMove(QgsLayoutPoint(230.549, 166.780, QgsUnitTypes.LayoutMillimeters))
+    map2.attemptResize(QgsLayoutSize(44.840, 23.984, QgsUnitTypes.LayoutMillimeters)) # width, height
     # map2.storeCurrentLayerStyles()
     # map2.setKeepLayerSet(True)
     # map2.setKeepLayerStyles(True)
