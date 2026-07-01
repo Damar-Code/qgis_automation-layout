@@ -66,16 +66,16 @@ configuration_variable_path = CONFIG_VARIABLES
 with open(configuration_variable_path, 'r', encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 
-companies_select    = 'GPA'
+companies_select    = 'MNM'
 logo_path           = cfg['logo']
-map_comp_title      = cfg['comp_title']
 north_arrow         = cfg['north_arrow']
+map_comp_title      = cfg['companies'][companies_select]['comp_title']
 gdb_path            = cfg['companies'][companies_select]['gdb_path']
 gpkg_gaps_path      = cfg['companies'][companies_select]['gpkg_gaps_path']
-mapIndex_xmin       = cfg['map_index_extent'][0]
-mapIndex_ymin       = cfg['map_index_extent'][1]
-mapIndex_xmax       = cfg['map_index_extent'][2]
-mapIndex_ymax       = cfg['map_index_extent'][3]
+mapIndex_xmin       = cfg['companies'][companies_select]['map_index_extent'][0]
+mapIndex_ymin       = cfg['companies'][companies_select]['map_index_extent'][1]
+mapIndex_xmax       = cfg['companies'][companies_select]['map_index_extent'][2]
+mapIndex_ymax       = cfg['companies'][companies_select]['map_index_extent'][3]
 
 today = date.today()
 run_day = today.strftime("%d %B %Y")
@@ -116,34 +116,99 @@ gap_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 #     layer = gdb.GetLayerByIndex(i)
 #     print(layer.GetName())
 
-paddock_layer = QgsVectorLayer(
-    f"{gdb_path}|layername=paddock",
-    "Landuse Types",
-    "ogr"
-)
-paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
-paddockToponimi_layer = QgsVectorLayer(
-    f"{gdb_path}|layername=paddock",
-    "Paddock Toponimi",
-    "ogr"
-)
-paddockToponimi_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-# Filter only CP
-paddockToponimi_layer.setSubsetString("\"LANDUSETYP\" = 'CP'")
+if companies_select == 'GPA':
 
-## 03.3 Paddock
-farm_layer = QgsVectorLayer(
-    f"{gdb_path}|layername=Farm",
-    "Farm Boundary",
-    "ogr"
-)
-farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+    # MAIN MAP
+    paddock_layer = QgsVectorLayer(
+        f"{gdb_path}|layername=paddock",
+        "Landuse Types",
+        "ogr"
+    )
+    paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    paddockToponimi_layer = QgsVectorLayer(
+        f"{gdb_path}|layername=paddock",
+        "Paddock Toponimi",
+        "ogr"
+    )
+    paddockToponimi_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    # Filter only CP
+    paddockToponimi_layer.setSubsetString("\"LANDUSETYP\" = 'CP'")
+
+    ## 03.3 Paddock
+    farm_layer = QgsVectorLayer(
+        f"{gdb_path}|layername=Farm",
+        "Farm Boundary",
+        "ogr"
+    )
+    farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    # INDEX MAP
+    paddockIndex_layer = QgsVectorLayer(
+        f"{gdb_path}|layername=paddock",
+        "Paddock",
+        "ogr"
+    )
+    paddockIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    farmIndex_layer = QgsVectorLayer(
+        f"{gdb_path}|layername=Farm",
+        "Farm",
+        "ogr"
+    )
+    farmIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    gdb_paddock = gpd.read_file(gdb_path, layer='paddock')
+    paddock_cp = gdb_paddock[gdb_paddock['LANDUSETYP'] == 'CP']
+
+elif companies_select == 'MNM':
+
+    # MAIN MAP
+    paddock_layer = QgsVectorLayer(
+        f"{gdb_path}|layername=Paddock",
+        "Landuse Types",
+        "ogr"
+    )
+    paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    paddockToponimi_layer = QgsVectorLayer(
+        f"{gdb_path}|layername=planting",
+        "Paddock Toponimi",
+        "ogr"
+    )
+    paddockToponimi_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    ## 03.3 Paddock
+    farm_layer = QgsVectorLayer(
+        f"{gdb_path}|layername=Farm",
+        "Farm Boundary",
+        "ogr"
+    )
+    farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    # INDEX MAP
+    paddockIndex_layer = QgsVectorLayer(
+        f"{gdb_path}|layername=Paddock",
+        "Paddock",
+        "ogr"
+    )
+    paddockIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    farmIndex_layer = QgsVectorLayer(
+        f"{gdb_path}|layername=Farm",
+        "Farm",
+        "ogr"
+    )
+    farmIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    paddock_cp = gpd.read_file(gdb_path, layer='planting')
+    paddock_cp["Area_Ha"] = paddock_cp.area/10000
+
 
 ## Get Values
 gapAR_database = gpd.read_file(gpkg_gaps_path, layer=fiona_latest_gap)
-gdb_paddock = gpd.read_file(gdb_path, layer='paddock')
-paddock_cp = gdb_paddock[gdb_paddock['LANDUSETYP'] == 'CP']
 
 # Gap Ha
 gapHA = sum(gapAR_database[gapAR_database['cls'] == 'gaps spot']['cls_area_ha'])
@@ -174,7 +239,9 @@ newest_date = gapAR_database["photo_date"].max().strftime("%d %B %Y")
 
 
 # Next Target
+
 nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
+
 # print(nextTarget)
 
 
@@ -235,13 +302,22 @@ def add_mainMap(gap_layer, paddock_layer, farm_layer, paddockToponimi_layer):
     farmMain_layer.loadNamedStyle(farm_layer_style_path)
     QgsProject.instance().addMapLayer(farmMain_layer)
     ## Paddock Toponimi
-    paddockToponimi_style_path = (parent_dir +"/input/style/PaddockTonomi_Style.qml")
-    paddockToponimi_layer.loadNamedStyle(paddockToponimi_style_path)
-    QgsProject.instance().addMapLayer(paddockToponimi_layer)
+    if companies_select == 'GPA':
+        paddockToponimi_style_path = (parent_dir +"/input/style/PaddockTonomi_Style.qml")
+        paddockToponimi_layer.loadNamedStyle(paddockToponimi_style_path)
+        QgsProject.instance().addMapLayer(paddockToponimi_layer)
+        
+        map_item = QgsLayoutItemMap(layout)
+        map_item.setLayers([paddockToponimi_layer, farmMain_layer, gap_layer, paddock_layer])
+        
+    elif companies_select == 'MNM':
+        paddockToponimi_style_path = (parent_dir +"/input/style/PaddockTonomiMNM_Style.qml")
+        paddockToponimi_layer.loadNamedStyle(paddockToponimi_style_path)
+        QgsProject.instance().addMapLayer(paddockToponimi_layer)
 
+        map_item = QgsLayoutItemMap(layout)
+        map_item.setLayers([farmMain_layer, gap_layer, paddockToponimi_layer, paddock_layer])
     
-    map_item = QgsLayoutItemMap(layout)
-    map_item.setLayers([paddockToponimi_layer, farmMain_layer, gap_layer, paddock_layer])
 
     map_item.attemptMove(
         QgsLayoutPoint(
@@ -375,11 +451,11 @@ def legendTitles():
     areaHA_title.setText("Area (Ha)")
     areaHA_title.setHAlign(Qt.AlignRight)
     areaHA_title.setVAlign(Qt.AlignTop)
-    areaHA_title.attemptResize(QgsLayoutSize(12.771, 4.070, QgsUnitTypes.LayoutMillimeters)) # width, height
-    areaHA_title.attemptMove(QgsLayoutPoint(255.134, 49.284, QgsUnitTypes.LayoutMillimeters))
+    areaHA_title.attemptMove(QgsLayoutPoint(261.653, 49.284, QgsUnitTypes.LayoutMillimeters))
+    areaHA_title.attemptResize(QgsLayoutSize(10.546, 4.070, QgsUnitTypes.LayoutMillimeters)) # width, height
     areaHA_title_style = QgsTextFormat()
     areaHA_title_style.setColor(Qt.GlobalColor.black)
-    areaHA_title_style.setSize(7)
+    areaHA_title_style.setSize(6)
     areaHA_title_style.setForcedBold(True)
     areaHA_title.setTextFormat(areaHA_title_style)
     
@@ -389,28 +465,28 @@ def legendTitles():
     percentage_title.setText("Percentage (%)")
     percentage_title.setHAlign(Qt.AlignRight)
     percentage_title.setVAlign(Qt.AlignTop)
-    percentage_title.attemptResize(QgsLayoutSize(21.547, 3.686, QgsUnitTypes.LayoutMillimeters)) # width, height
-    percentage_title.attemptMove(QgsLayoutPoint(269.545, 49.284, QgsUnitTypes.LayoutMillimeters))
+    percentage_title.attemptMove(QgsLayoutPoint(273.567, 49.284, QgsUnitTypes.LayoutMillimeters))
+    percentage_title.attemptResize(QgsLayoutSize(17.575, 3.686, QgsUnitTypes.LayoutMillimeters)) # width, height
     percentage_title.setTextFormat(areaHA_title_style)
     
     gap_info_syle = QgsTextFormat()
     gap_info_syle.setColor(Qt.GlobalColor.black)
     gap_info_syle.setSize(7)
    
-    # Gap
-    gap_text = QgsLayoutItemLabel(layout)
-    layout.addLayoutItem(gap_text)
-    gap_text.setText("Gap")
-    gap_text.setHAlign(Qt.AlignLeft)
-    gap_text.setVAlign(Qt.AlignTop)
-    gap_text.setTextFormat(gap_info_syle)
-    gap_text.attemptMove(QgsLayoutPoint(224.481, 54.688, QgsUnitTypes.LayoutMillimeters))
-    gap_text.attemptResize(QgsLayoutSize(7.403, 2.882, QgsUnitTypes.LayoutMillimeters)) # width, height
-
     # Growth Plant
     gap_text = QgsLayoutItemLabel(layout)
     layout.addLayoutItem(gap_text)
     gap_text.setText("Growth Plant")
+    gap_text.setHAlign(Qt.AlignLeft)
+    gap_text.setVAlign(Qt.AlignTop)
+    gap_text.setTextFormat(gap_info_syle)
+    gap_text.attemptMove(QgsLayoutPoint(223.997, 54.556, QgsUnitTypes.LayoutMillimeters))
+    gap_text.attemptResize(QgsLayoutSize(26.397, 2.882, QgsUnitTypes.LayoutMillimeters)) # width, height
+
+    # Gap
+    gap_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(gap_text)
+    gap_text.setText("Gap")
     gap_text.setHAlign(Qt.AlignLeft)
     gap_text.setVAlign(Qt.AlignTop)
     gap_text.setTextFormat(gap_info_syle)
@@ -420,12 +496,12 @@ def legendTitles():
     # Next Target
     gap_text = QgsLayoutItemLabel(layout)
     layout.addLayoutItem(gap_text)
-    gap_text.setText("Next Target")
+    gap_text.setText("Under Age (Next Target)")
     gap_text.setHAlign(Qt.AlignLeft)
     gap_text.setVAlign(Qt.AlignTop)
     gap_text.setTextFormat(gap_info_syle)
     gap_text.attemptMove(QgsLayoutPoint(223.997, 65.846, QgsUnitTypes.LayoutMillimeters))
-    gap_text.attemptResize(QgsLayoutSize(14.807, 2.899, QgsUnitTypes.LayoutMillimeters)) # width, height
+    gap_text.attemptResize(QgsLayoutSize(30.873, 2.899, QgsUnitTypes.LayoutMillimeters)) # width, height
     
 
     return titles, areaHA_title, percentage_title, gap_text
@@ -440,16 +516,6 @@ def legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentag
     keyStyle.setColor(Qt.GlobalColor.black)
     keyStyle.setSize(7)
    
-    # Gap
-    gapValue_text = QgsLayoutItemLabel(layout)
-    layout.addLayoutItem(gapValue_text)
-    gapValue_text.setText(str(round_gapHA))
-    gapValue_text.setHAlign(Qt.AlignRight)
-    gapValue_text.setVAlign(Qt.AlignTop)
-    gapValue_text.setTextFormat(keyStyle)
-    gapValue_text.attemptMove(QgsLayoutPoint(253.244, 55, QgsUnitTypes.LayoutMillimeters))
-    gapValue_text.attemptResize(QgsLayoutSize(14.662, 3.074, QgsUnitTypes.LayoutMillimeters)) # width, height
-
     # Growth Plant
     growthValue_text = QgsLayoutItemLabel(layout)
     layout.addLayoutItem(growthValue_text)
@@ -457,9 +523,19 @@ def legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentag
     growthValue_text.setHAlign(Qt.AlignRight)
     growthValue_text.setVAlign(Qt.AlignTop)
     growthValue_text.setTextFormat(keyStyle)
-    growthValue_text.attemptMove(QgsLayoutPoint(251.870, 60.5, QgsUnitTypes.LayoutMillimeters))
+    growthValue_text.attemptMove(QgsLayoutPoint(256.163, 54.540, QgsUnitTypes.LayoutMillimeters))
     growthValue_text.attemptResize(QgsLayoutSize(16.036, 2.913, QgsUnitTypes.LayoutMillimeters)) # width, height
-
+    
+    # Gap
+    gapValue_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(gapValue_text)
+    gapValue_text.setText(str(round_gapHA))
+    gapValue_text.setHAlign(Qt.AlignRight)
+    gapValue_text.setVAlign(Qt.AlignTop)
+    gapValue_text.setTextFormat(keyStyle)
+    gapValue_text.attemptMove(QgsLayoutPoint(257.537, 60.222, QgsUnitTypes.LayoutMillimeters))
+    gapValue_text.attemptResize(QgsLayoutSize(14.662, 3.074, QgsUnitTypes.LayoutMillimeters)) # width, height
+   
     # Next Target
     nextTargetValue_text = QgsLayoutItemLabel(layout)
     layout.addLayoutItem(nextTargetValue_text)
@@ -467,18 +543,8 @@ def legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentag
     nextTargetValue_text.setHAlign(Qt.AlignRight)
     nextTargetValue_text.setVAlign(Qt.AlignTop)
     nextTargetValue_text.setTextFormat(keyStyle)
-    nextTargetValue_text.attemptMove(QgsLayoutPoint(257.871, 65.993, QgsUnitTypes.LayoutMillimeters))
+    nextTargetValue_text.attemptMove(QgsLayoutPoint(262.257, 66.029, QgsUnitTypes.LayoutMillimeters))
     nextTargetValue_text.attemptResize(QgsLayoutSize(9.943, 2.605, QgsUnitTypes.LayoutMillimeters)) # width, height
-
-    # Percentage Gap
-    gapValue_text = QgsLayoutItemLabel(layout)
-    layout.addLayoutItem(gapValue_text)
-    gapValue_text.setText(str(round_percentageGAP))
-    gapValue_text.setHAlign(Qt.AlignRight)
-    gapValue_text.setVAlign(Qt.AlignTop)
-    gapValue_text.setTextFormat(keyStyle)
-    gapValue_text.attemptMove(QgsLayoutPoint(281.835, 55, QgsUnitTypes.LayoutMillimeters))
-    gapValue_text.attemptResize(QgsLayoutSize(9.097, 3.030, QgsUnitTypes.LayoutMillimeters)) # width, height
 
     # Percentage Growth Plant
     growthValue_text = QgsLayoutItemLabel(layout)
@@ -487,9 +553,20 @@ def legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentag
     growthValue_text.setHAlign(Qt.AlignRight)
     growthValue_text.setVAlign(Qt.AlignTop)
     growthValue_text.setTextFormat(keyStyle)
-    growthValue_text.attemptMove(QgsLayoutPoint(275.624, 60.5, QgsUnitTypes.LayoutMillimeters))
+    growthValue_text.attemptMove(QgsLayoutPoint(275.834, 54.495, QgsUnitTypes.LayoutMillimeters))
     growthValue_text.attemptResize(QgsLayoutSize(15.308, 2.726, QgsUnitTypes.LayoutMillimeters)) # width, height
 
+    # Percentage Gap
+    gapValue_text = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(gapValue_text)
+    gapValue_text.setText(str(round_percentageGAP))
+    gapValue_text.setHAlign(Qt.AlignRight)
+    gapValue_text.setVAlign(Qt.AlignTop)
+    gapValue_text.setTextFormat(keyStyle)
+    gapValue_text.attemptMove(QgsLayoutPoint(282.045, 60.175, QgsUnitTypes.LayoutMillimeters))
+    gapValue_text.attemptResize(QgsLayoutSize(9.097, 3.030, QgsUnitTypes.LayoutMillimeters)) # width, height
+
+   
 
     return gapValue_text, growthValue_text, nextTargetValue_text
 
@@ -535,27 +612,46 @@ def addLegendRectangle(
     return rect
 
 ## Gap Info
-addLegendRectangle(layout, x=218.000, y=53.934, fill_color="#FF0000", outline=False)
-addLegendRectangle(layout, x=218.000, y=59.809, fill_color="#33a02c", outline=False)
+addLegendRectangle(layout, x=218.000, y=53.934, fill_color="#33a02c", outline=False)
+addLegendRectangle(layout, x=218.000, y=59.809, fill_color="#FF0000", outline=False)
 addLegendRectangle(layout, x=218.000, y=65.5, fill_color="#d8d8d8", outline=False)
 
 # 08 - MAP TITLE
-def mapTitle():
+def mapTitle(companies_select):
     main_title = QgsLayoutItemLabel(layout)
     layout.addLayoutItem(main_title)
-    main_title.setText(f'{map_comp_title}')
+    if companies_select == 'GPA':
+        main_title.setText('PT. GLOBAL PAPUA ABADI')
+    elif companies_select == 'MNM':
+        main_title.setText('PT. MURNI NUSANTARA MANDIRI')
+
     main_title.setHAlign(Qt.AlignCenter)
     main_title.setVAlign(Qt.AlignVCenter)
-    main_title.attemptResize(QgsLayoutSize(54.480, 12.791, QgsUnitTypes.LayoutMillimeters)) # width, height
-    main_title.attemptMove(QgsLayoutPoint(236.865, 7.147, QgsUnitTypes.LayoutMillimeters))
+    main_title.attemptMove(QgsLayoutPoint(233.448, 7.964, QgsUnitTypes.LayoutMillimeters))
+    main_title.attemptResize(QgsLayoutSize(58.971, 6.406, QgsUnitTypes.LayoutMillimeters)) # width, height
     main_title_style = QgsTextFormat()
     main_title_style.setColor(Qt.GlobalColor.black)
-    main_title_style.setSize(10)
+    main_title_style.setSize(9)
     main_title_style.setForcedBold(True)
     main_title.setTextFormat(main_title_style)
-    return main_title
 
-mapTitle()
+    sub_title = QgsLayoutItemLabel(layout)
+    layout.addLayoutItem(sub_title)
+    sub_title.setText('Gap Detection Map')
+    sub_title.setHAlign(Qt.AlignCenter)
+    sub_title.setVAlign(Qt.AlignVCenter)
+    sub_title.attemptMove(QgsLayoutPoint(233.448, 13.544, QgsUnitTypes.LayoutMillimeters))
+    sub_title.attemptResize(QgsLayoutSize(58.970, 4.885, QgsUnitTypes.LayoutMillimeters)) # width, height
+    sub_title_style = QgsTextFormat()
+    sub_title_style.setColor(Qt.GlobalColor.black)
+    sub_title_style.setSize(8)
+    sub_title_style.setForcedBold(True)
+    sub_title.setTextFormat(sub_title_style)
+
+
+    return main_title, sub_title
+
+mapTitle(companies_select)
 
 # 09 - MAP TITLE
 def mapDate(run_day):
@@ -564,11 +660,11 @@ def mapDate(run_day):
     main_date.setText(f"As of {run_day}")
     main_date.setHAlign(Qt.AlignCenter)
     main_date.setVAlign(Qt.AlignVCenter)
-    main_date.attemptResize(QgsLayoutSize(40.784, 4.885, QgsUnitTypes.LayoutMillimeters)) # width, height
-    main_date.attemptMove(QgsLayoutPoint(243.713, 18.609, QgsUnitTypes.LayoutMillimeters))
+    main_date.attemptMove(QgsLayoutPoint(233.448, 18.430, QgsUnitTypes.LayoutMillimeters))
+    main_date.attemptResize(QgsLayoutSize(58.970, 4.885, QgsUnitTypes.LayoutMillimeters)) # width, height
     main_date_style = QgsTextFormat()
     main_date_style.setColor(Qt.GlobalColor.black)
-    main_date_style.setSize(8)
+    main_date_style.setSize(7)
     main_date.setTextFormat(main_date_style)
     return main_date
 
@@ -744,11 +840,11 @@ def addLine(layout, x, y, length, orientation="horizontal", thickness=0.2, color
 addLine(layout=layout, x=262.993, y=26.559, length=19.3, orientation="vertical")
 
 ### Frame for Gap Precentage
-addLine(layout=layout, x=218, y=58.888, length=74.269, orientation="horizontal")
-addLine(layout=layout, x=218, y=64.545, length=74.269, orientation="horizontal")
-addLine(layout=layout, x=218, y=70.2, length=51.168, orientation="horizontal")
-addLine(layout=layout, x=247.245, y=54.079, length=16.3, orientation="vertical")
-addLine(layout=layout, x=269.166, y=53.934, length=16.465, orientation="vertical")
+addLine(layout=layout, x=218, y=58.888, length=74.269, orientation="horizontal") # 1st left horizontal
+addLine(layout=layout, x=218, y=64.545, length=74.269, orientation="horizontal") # 2nd left horizontal
+addLine(layout=layout, x=218, y=70.2, length=55.168, orientation="horizontal") # 3rd left horizontal
+addLine(layout=layout, x=255.245, y=54.079, length=16.3, orientation="vertical") # 1st left vertical
+addLine(layout=layout, x=273.166, y=53.934, length=16.465, orientation="vertical") # 2nd left vertical
 
 # 10 - ADD NORTH ARROW
 def northArrow():
@@ -801,20 +897,6 @@ def add_mapSource(layout, run_day, oldest_date, newest_date):
 add_mapSource(layout, run_day, oldest_date, newest_date)
 
 # 12 - MAP INDEX
-paddockIndex_layer = QgsVectorLayer(
-    f"{gdb_path}|layername=paddock",
-    "Paddock",
-    "ogr"
-)
-paddockIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-
-farmIndex_layer = QgsVectorLayer(
-    f"{gdb_path}|layername=Farm",
-    "Farm",
-    "ogr"
-)
-farmIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-
 def add_mapIndex(farmIndex_layer, paddockIndex_layer, layout):
 
     # Create Map Items in The Layout
