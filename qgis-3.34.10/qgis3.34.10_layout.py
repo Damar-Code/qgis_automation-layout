@@ -80,49 +80,46 @@ def run_single_company(companies_select) -> None:
     project = QgsProject.instance()
     project.clear()
 
-    # 02 - CREATE QGIS PROJECT
+    # CREATE QGIS PROJECT
     project = QgsProject.instance()
     project.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
-    # 03 - LOAD ALL NEEDED LAYERS
-    ## 03.1 Gap Database
+    ## Gap Database
     fiona_latest_gap = fiona.listlayers(gpkg_gaps_path)[-1]
-
     gap_layer = QgsVectorLayer(
         f"{gpkg_gaps_path}|layername={fiona_latest_gap}",
         "Gap Detection",
         "ogr"
     )
-    # print('latest_gap: ', fiona_latest_gap)
     gap_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
-    ## 03.2 Paddock
+    ## Paddock
     # gdb = ogr.Open(gdb_path)
     # for i in range(gdb.GetLayerCount()):
     #     layer = gdb.GetLayerByIndex(i)
     #     print(layer.GetName())
 
+
+    # ADJUST LAYOUT BASED ON COMPANY
     if companies_select == 'GPA':
 
         # MAIN MAP
+        # Paddock Layer
         paddock_layer = QgsVectorLayer(
             f"{gdb_path}|layername=paddock",
             "Landuse Types",
             "ogr"
         )
         paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-
+        # Paddock Toponomi Layer
         paddockToponimi_layer = QgsVectorLayer(
             f"{gdb_path}|layername=paddock",
             "Paddock Toponimi",
             "ogr"
         )
         paddockToponimi_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-
-        # Filter only CP
-        paddockToponimi_layer.setSubsetString("\"LANDUSETYP\" = 'CP'")
-
-        ## 03.3 Paddock
+        paddockToponimi_layer.setSubsetString("\"LANDUSETYP\" = 'CP'") # Filter only CP
+        # Farm Layer
         farm_layer = QgsVectorLayer(
             f"{gdb_path}|layername=Farm",
             "Farm Boundary",
@@ -131,41 +128,42 @@ def run_single_company(companies_select) -> None:
         farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
         # INDEX MAP
+        # Paddock Index Layer
         paddockIndex_layer = QgsVectorLayer(
             f"{gdb_path}|layername=paddock",
             "Paddock",
             "ogr"
         )
         paddockIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-
+        # Farm Index Layer
         farmIndex_layer = QgsVectorLayer(
             f"{gdb_path}|layername=Farm",
             "Farm",
             "ogr"
         )
         farmIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-
+        # Paddock Geopandas Dataframe
         gdb_paddock = gpd.read_file(gdb_path, layer='paddock')
         paddock_cp = gdb_paddock[gdb_paddock['LANDUSETYP'] == 'CP']
 
     elif companies_select == 'MNM':
 
         # MAIN MAP
+        # Paddock Layer
         paddock_layer = QgsVectorLayer(
             f"{gdb_path}|layername=Paddock",
             "Landuse Types",
             "ogr"
         )
         paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-
+        # Paddock Toponomi Layer
         paddockToponimi_layer = QgsVectorLayer(
             f"{gdb_path}|layername=planting",
             "Paddock Toponimi",
             "ogr"
         )
         paddockToponimi_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-
-        ## 03.3 Paddock
+        # Farm Layer
         farm_layer = QgsVectorLayer(
             f"{gdb_path}|layername=Farm",
             "Farm Boundary",
@@ -174,65 +172,54 @@ def run_single_company(companies_select) -> None:
         farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
         # INDEX MAP
+        # Paddock Index Layer
         paddockIndex_layer = QgsVectorLayer(
             f"{gdb_path}|layername=Paddock",
             "Paddock",
             "ogr"
         )
         paddockIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-
+        # Farm Index Layer
         farmIndex_layer = QgsVectorLayer(
             f"{gdb_path}|layername=Farm",
             "Farm",
             "ogr"
         )
         farmIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-
+        # Paddock Geopandas Dataframe
         paddock_cp = gpd.read_file(gdb_path, layer='planting')
         paddock_cp["Area_Ha"] = paddock_cp.area/10000
 
 
-    ## Get Values
+    ## GET VALUES FOR MAIN MAP INFO
     gapAR_database = gpd.read_file(gpkg_gaps_path, layer=fiona_latest_gap)
-
     # Gap Ha
     gapHA = sum(gapAR_database[gapAR_database['cls'] == 'gaps spot']['cls_area_ha'])
     round_gapHA = round(gapHA,3)
     # print(round_gapHA)
-
     # Growth Plant Ha
     plantHA = sum(gapAR_database[gapAR_database['cls'] == 'plant']['cls_area_ha'])
     round_plantHA = round(plantHA,3)
     # print(round_plantHA)
-
     # Percentage Gap
     percentageGAP = gapHA/(gapHA + plantHA)*100
     round_percentageGAP = round(percentageGAP,2)
     # print(round_percentageGAP)
-
     # Percentage Growth Plant
     percentagePlant = plantHA/(gapHA + plantHA)*100
     round_percentagePlant = round(percentagePlant,2)
     # print(round_percentagePlant)
     # print(round_percentagePlant+round_percentageGAP)
-
     # Photo latest and newest
     oldest_date = gapAR_database["photo_date"].min().strftime("%d %B %Y")
     newest_date = gapAR_database["photo_date"].max().strftime("%d %B %Y")
     # print(oldest_date)
     # print(newest_date)
 
-
     # Next Target
-
     nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
 
-    # print(nextTarget)
-
-
-    # print("Valid:", paddock.isValid())
-
-    # 04 - PRODUCE LAYOUTING MANAGER
+    # PRODUCE LAYOUTING MANAGER
     manager = project.layoutManager()
     layout_name = "Automation Map"
     layout = manager.layoutByName(layout_name)
@@ -252,7 +239,7 @@ def run_single_company(companies_select) -> None:
 
     # main_frame.setSymbol(frame_style(width = 0.1))
 
-    ## 05 Map Frame
+    ## MAP FRAME
     def addFrame(x,y,width,height):
         legend_frame = QgsLayoutItemShape(layout)
         legend_frame.setShapeType(QgsLayoutItemShape.Shape.Rectangle)
@@ -260,16 +247,16 @@ def run_single_company(companies_select) -> None:
         legend_frame.attemptMove(QgsLayoutPoint(x,y, QgsUnitTypes.LayoutMillimeters))
         layout.addLayoutItem(legend_frame)
         return legend_frame.setSymbol(frame_style(width = 0.3))
-    ### 05.01 Main Map Frame for Side Information Map
+    ### Main Map Frame for Side Information Map
     addFrame(215.484, 4.515, 76.785, 200.969)
-    ### 05.02 Navigation Info Frame
+    ### Navigation Info Frame
     addFrame(215.484, 26.559, 76.785, 19.239)
-    ### 05.03 Map Index
+    ### Map Index
     addFrame(215.484, 162.234, 76.785, 33.077)
 
 
-    # 06. MAIN MAP SETTING
-    ## 06.01 Setup Frame & Call All Layers
+    # MAIN MAP SETTING
+    ## Setup Main Map Frame & Call All Layers
     def add_mainMap(gap_layer, paddock_layer, farm_layer, paddockToponimi_layer):
 
         # Load the styles
@@ -304,25 +291,12 @@ def run_single_company(companies_select) -> None:
             map_item.setLayers([farmMain_layer, gap_layer, paddockToponimi_layer, paddock_layer])
         
 
-        map_item.attemptMove(
-            QgsLayoutPoint(
-                4.434,
-                4.515,
-                QgsUnitTypes.LayoutMillimeters
-            )
-        )
-
-        map_item.attemptResize(
-            QgsLayoutSize(
-                211.058,
-                200.969,
-                QgsUnitTypes.LayoutMillimeters
-            )
-        )
+        map_item.attemptMove(QgsLayoutPoint(4.434, 4.515, QgsUnitTypes.LayoutMillimeters))
+        map_item.attemptResize(QgsLayoutSize(211.058, 200.969, QgsUnitTypes.LayoutMillimeters))
 
         # IMPORTANT
         extent = gap_layer.extent()
-        extent.scale(1.1)      # 10% margin
+        extent.scale(1.1) # 10% margin
         map_item.zoomToExtent(extent)
 
         # Round up scale
@@ -343,7 +317,7 @@ def run_single_company(companies_select) -> None:
     map_item = add_mainMap(gap_layer, paddock_layer, farm_layer, paddockToponimi_layer)
 
 
-    # 07. ADD LEGEND
+    # ADD LEGEND
     def addLegend(list_selected_layers):
         # Add Legend Based on Checked Layers
         legend = QgsLayoutItemLegend(layout)
@@ -413,7 +387,7 @@ def run_single_company(companies_select) -> None:
     addLegend(list_selected_layers=["Farm Boundary","Landuse Types"])
 
 
-    ## Legend Titles
+    ## LEGEND TITLES
     def legendTitles():
         # main legend
         titles = QgsLayoutItemLabel(layout)
@@ -494,7 +468,7 @@ def run_single_company(companies_select) -> None:
     legendTitles()
 
 
-    ## Legend Main Info Values
+    ## LEGEND MAIN INFO VALUES
     def legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentageGAP, round_percentagePlant):
         
         keyStyle = QgsTextFormat()
@@ -551,14 +525,12 @@ def run_single_company(companies_select) -> None:
         gapValue_text.attemptMove(QgsLayoutPoint(282.045, 60.175, QgsUnitTypes.LayoutMillimeters))
         gapValue_text.attemptResize(QgsLayoutSize(9.097, 3.030, QgsUnitTypes.LayoutMillimeters)) # width, height
 
-    
-
         return gapValue_text, growthValue_text, nextTargetValue_text
 
     legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentageGAP, round_percentagePlant)
 
 
-    ## Legend Items
+    ## LEGEND SYMBOLS
     def addLegendRectangle(
         layout,
         x,
@@ -596,12 +568,12 @@ def run_single_company(companies_select) -> None:
 
         return rect
 
-    ## Gap Info
+    ## Add Legend Symbols
     addLegendRectangle(layout, x=218.000, y=53.934, fill_color="#33a02c", outline=False)
     addLegendRectangle(layout, x=218.000, y=59.809, fill_color="#FF0000", outline=False)
     addLegendRectangle(layout, x=218.000, y=65.5, fill_color="#d8d8d8", outline=False)
 
-    # 08 - MAP TITLE
+    # MAP TITLE
     def mapTitle(companies_select):
         main_title = QgsLayoutItemLabel(layout)
         layout.addLayoutItem(main_title)
@@ -638,7 +610,7 @@ def run_single_company(companies_select) -> None:
 
     mapTitle(companies_select)
 
-    # 09 - MAP TITLE
+    # MAP DATE
     def mapDate(run_day):
         main_date = QgsLayoutItemLabel(layout)
         layout.addLayoutItem(main_date)
@@ -655,7 +627,7 @@ def run_single_company(companies_select) -> None:
 
     mapDate(run_day)
 
-    # 10 - LOGO
+    # MAP LOGO
     def mapLogo(logo_path):
         main_logo = QgsLayoutItemPicture(layout)
         main_logo.setPicturePath(logo_path)
@@ -665,10 +637,9 @@ def run_single_company(companies_select) -> None:
         layout.addLayoutItem(main_logo)
 
     mapLogo(logo_path)
-
     # help(QgsLayoutItemScaleBar)
 
-    # 09 - ADD SCALE BAR
+    # MAP SCALE BAR
     def scaleBar():
         scalebar_item = QgsLayoutItemScaleBar(layout)
         scalebar_item.setLinkedMap(map_item)
@@ -714,7 +685,7 @@ def run_single_company(companies_select) -> None:
 
     scaleBar()
 
-    # 10 - ADD SCALE BAR
+    # MAP COORDINATE INFO
     def mapCoordinateInfo():
         def coord_text_format():
             text_format = QgsTextFormat()
@@ -748,7 +719,7 @@ def run_single_company(companies_select) -> None:
 
     mapCoordinateInfo()
 
-    # 11 - ADD SCALE NUMBER
+    # ADD SCALE NUMBER
     def scaleNumeric():
         def coord_text_format():
             text_format = QgsTextFormat()
@@ -781,7 +752,7 @@ def run_single_company(companies_select) -> None:
 
     scaleNumeric()
 
-
+    # ADD LINES
     def addLine(layout, x, y, length, orientation="horizontal", thickness=0.2, color=QColor(0, 0, 0)):
 
         line = QgsLayoutItemShape(layout)
