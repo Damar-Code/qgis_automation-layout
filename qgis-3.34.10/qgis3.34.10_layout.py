@@ -9,45 +9,30 @@ from qgis.core import (
     QgsLayoutSize, 
     QgsCoordinateReferenceSystem, 
     QgsRasterLayer, 
-    QgsLayoutItemShape, 
+    QgsLayoutItemShape,
     QgsLayoutPoint,
     QgsSimpleFillSymbolLayer, 
-    QgsFillSymbol, 
-    QgsLayoutItemMapGrid, 
-    QgsTextFormat, 
-    QgsLayoutItemPolyline, 
-    QgsLineSymbol, 
+    QgsFillSymbol,
+    QgsTextFormat,
     QgsLayoutItemLabel, 
     QgsLayoutItemPicture, 
     QgsLayoutItemScaleBar,
     QgsRectangle,
     QgsLayoutMeasurement,
-    QgsRuleBasedRenderer,
-    QgsSymbol,
-    QgsRendererCategory,
-    QgsLayerTreeGroup,
     QgsLayerTreeLayer,
     QgsCategorizedSymbolRenderer,
-    QgsStyle,
-    QgsStyleProxyModel,
     QgsLayoutItemLegend,
     QgsLegendStyle,
-    QgsLayerTree,
     QgsScaleBarSettings,
-    QgsBasicNumericFormat
     )
 
 from qgis.PyQt.QtCore import (
     Qt,
-    QRectF,
-    QPointF
 )
 
 from qgis.PyQt.QtGui import (
     QColor,
     QFont,
-    QImage,
-    QPolygonF
 )
 
 import geopandas as gpd
@@ -67,9 +52,11 @@ with open(configuration_variable_path, 'r', encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 
 companies_select    = 'MNM'
+
 logo_path           = cfg['logo']
 north_arrow         = cfg['north_arrow']
-map_comp_title      = cfg['companies'][companies_select]['comp_title']
+
+map_path            = cfg['companies'][companies_select]['map_path']
 gdb_path            = cfg['companies'][companies_select]['gdb_path']
 gpkg_gaps_path      = cfg['companies'][companies_select]['gpkg_gaps_path']
 mapIndex_xmin       = cfg['companies'][companies_select]['map_index_extent'][0]
@@ -897,7 +884,7 @@ def add_mapSource(layout, run_day, oldest_date, newest_date):
 add_mapSource(layout, run_day, oldest_date, newest_date)
 
 # 12 - MAP INDEX
-def add_mapIndex(farmIndex_layer, paddockIndex_layer, layout):
+def add_mapIndex(farmIndex_layer, gap_layer, paddockIndex_layer, layout, companies_select):
 
     # Create Map Items in The Layout
     map2 = QgsLayoutItemMap(layout)
@@ -915,13 +902,18 @@ def add_mapIndex(farmIndex_layer, paddockIndex_layer, layout):
     farmIndex_layer_style_path = os.path.join(parent_dir + "/input/style/FarmIndex_Style.qml")
     farmIndex_layer.loadNamedStyle(farmIndex_layer_style_path)
     QgsProject.instance().addMapLayer(farmIndex_layer)
-    
+
+    gap_layer_style_path = (parent_dir +"/input/style/GapsArea_Style.qml")
+    gap_layer.loadNamedStyle(gap_layer_style_path)
+    QgsProject.instance().addMapLayer(gap_layer)
+
     paddockIndex_layer_style_path = os.path.join(parent_dir + "/input/style/PaddockIndex_Style.qml")
     paddockIndex_layer.loadNamedStyle(paddockIndex_layer_style_path)
     QgsProject.instance().addMapLayer(paddockIndex_layer)
+        
 
     # Set an empty list of layers to deactivate all layers
-    map2.setLayers([farmIndex_layer, paddockIndex_layer, EsriSat])
+    map2.setLayers([farmIndex_layer, gap_layer, paddockIndex_layer, EsriSat])
 
     # Calculate the new extent with double the size
     new_extent = QgsRectangle(
@@ -942,11 +934,14 @@ def add_mapIndex(farmIndex_layer, paddockIndex_layer, layout):
 
     return layout.addLayoutItem(map2)
 
-add_mapIndex(farmIndex_layer, paddockIndex_layer, layout)
+add_mapIndex(farmIndex_layer, gap_layer, paddockIndex_layer, layout, companies_select)
 
 exporter = QgsLayoutExporter(layout)
 # exporter.exportToPdf(os.path.join(parent_dir + "/output/automation_map.pdf"), QgsLayoutExporter.PdfExportSettings())
-output_pdf = r"D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/output/automation_map.pdf"
+if companies_select == 'GPA':
+    output_pdf = os.path.join(map_path + f"GPA_Gap Detection Map_{run_day}.pdf")
+elif companies_select == 'MNM':
+    output_pdf = os.path.join(map_path + f"MNM_Gap Detection Map_{run_day}.pdf")
 
 result = exporter.exportToPdf(
     output_pdf,
