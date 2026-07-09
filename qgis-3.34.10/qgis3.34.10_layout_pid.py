@@ -51,12 +51,13 @@ configuration_variable_path = CONFIG_VARIABLES
 with open(configuration_variable_path, 'r', encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 
-companies_run       = cfg['companies_run']
+# companies_run       = cfg['companies_run']
+companies_run       = ['GPA']
 logo_path           = cfg['logo']
 north_arrow         = cfg['north_arrow']
 qgis_apps           = cfg['qgis_apps']
 
-print("companies_run: ", companies_run)
+# print("companies_run: ", companies_run)
 
 today = date.today()
 run_day = today.strftime("%d %B %Y")
@@ -66,7 +67,9 @@ script_dir  = os.path.dirname(os.path.abspath(__file__))
 parent_dir = 'D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/'
 print(parent_dir)
 
-def run_single_company(companies_select) -> None:
+pid_run = ['JAGF-2-G-009']
+
+def run_single_company(companies_select, pid) -> None:
 
     map_path            = cfg['companies'][companies_select]['map_path']
     gdb_path            = cfg['companies'][companies_select]['gdb_path']
@@ -92,6 +95,7 @@ def run_single_company(companies_select) -> None:
         "ogr"
     )
     gap_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+    gap_layer.setSubsetString(f"\"pid\" = '{pid}'") # Filter only selected PID
 
     ## Paddock
     # gdb = ogr.Open(gdb_path)
@@ -144,7 +148,9 @@ def run_single_company(companies_select) -> None:
         farmIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
         # Paddock Geopandas Dataframe
         gdb_paddock = gpd.read_file(gdb_path, layer='paddock')
-        paddock_cp = gdb_paddock[gdb_paddock['LANDUSETYP'] == 'CP']
+        gdb_paddock_pid = gdb_paddock[gdb_paddock['PID'] == pid]  # Filter only selected PID
+        paddock_cp = gdb_paddock_pid[gdb_paddock_pid['LANDUSETYP'] == 'CP']
+        paddock_up = gdb_paddock_pid[gdb_paddock_pid['LANDUSETYP'] == 'CU']
 
     elif companies_select == 'MNM':
 
@@ -193,12 +199,13 @@ def run_single_company(companies_select) -> None:
 
     ## GET VALUES FOR MAIN MAP INFO
     gapAR_database = gpd.read_file(gpkg_gaps_path, layer=fiona_latest_gap)
+    gapAR_pid = gapAR_database[gapAR_database['pid'] == pid]  # Filter only selected PID
     # Gap Ha
-    gapHA = sum(gapAR_database[gapAR_database['cls'] == 'gaps spot']['cls_area_ha'])
+    gapHA = sum(gapAR_pid[gapAR_pid['cls'] == 'gaps spot']['cls_area_ha'])
     round_gapHA = round(gapHA,3)
     # print(round_gapHA)
     # Growth Plant Ha
-    plantHA = sum(gapAR_database[gapAR_database['cls'] == 'plant']['cls_area_ha'])
+    plantHA = sum(gapAR_pid[gapAR_pid['cls'] == 'plant']['cls_area_ha'])
     round_plantHA = round(plantHA,3)
     # print(round_plantHA)
     # Percentage Gap
@@ -211,13 +218,19 @@ def run_single_company(companies_select) -> None:
     # print(round_percentagePlant)
     # print(round_percentagePlant+round_percentageGAP)
     # Photo latest and newest
-    oldest_date = gapAR_database["photo_date"].min().strftime("%d %B %Y")
-    newest_date = gapAR_database["photo_date"].max().strftime("%d %B %Y")
+    oldest_date = gapAR_pid["photo_date"].min().strftime("%d %B %Y")
+    newest_date = gapAR_pid["photo_date"].max().strftime("%d %B %Y")
     # print(oldest_date)
     # print(newest_date)
 
     # Next Target
-    nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
+    print('paddock_up', paddock_up)
+    if companies_select == 'GPA':
+        nextTarget = round(sum(paddock_up['Area_Ha']), 3)
+        unPercentage = round(nextTarget/(sum(paddock_up['Area_Ha']) + sum(paddock_cp['Area_Ha']))*100, 2)
+    if companies_select == 'MNM':
+        nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
+        nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
 
     # PRODUCE LAYOUTING MANAGER
     manager = project.layoutManager()
@@ -455,7 +468,7 @@ def run_single_company(companies_select) -> None:
         # Next Target
         gap_text = QgsLayoutItemLabel(layout)
         layout.addLayoutItem(gap_text)
-        gap_text.setText("Under Age (Next Target)")
+        gap_text.setText("Current Unplanted")
         gap_text.setHAlign(Qt.AlignLeft)
         gap_text.setVAlign(Qt.AlignTop)
         gap_text.setTextFormat(gap_info_syle)
@@ -506,26 +519,26 @@ def run_single_company(companies_select) -> None:
         nextTargetValue_text.attemptResize(QgsLayoutSize(9.943, 2.605, QgsUnitTypes.LayoutMillimeters)) # width, height
 
         # Percentage Growth Plant
-        growthValue_text = QgsLayoutItemLabel(layout)
-        layout.addLayoutItem(growthValue_text)
-        growthValue_text.setText(str(round_percentagePlant))
-        growthValue_text.setHAlign(Qt.AlignRight)
-        growthValue_text.setVAlign(Qt.AlignTop)
-        growthValue_text.setTextFormat(keyStyle)
-        growthValue_text.attemptMove(QgsLayoutPoint(275.834, 54.495, QgsUnitTypes.LayoutMillimeters))
-        growthValue_text.attemptResize(QgsLayoutSize(15.308, 2.726, QgsUnitTypes.LayoutMillimeters)) # width, height
+        growthPercentage_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(growthPercentage_text)
+        growthPercentage_text.setText(str(round_percentagePlant))
+        growthPercentage_text.setHAlign(Qt.AlignRight)
+        growthPercentage_text.setVAlign(Qt.AlignTop)
+        growthPercentage_text.setTextFormat(keyStyle)
+        growthPercentage_text.attemptMove(QgsLayoutPoint(275.834, 54.495, QgsUnitTypes.LayoutMillimeters))
+        growthPercentage_text.attemptResize(QgsLayoutSize(15.308, 2.726, QgsUnitTypes.LayoutMillimeters)) # width, height
 
         # Percentage Gap
-        gapValue_text = QgsLayoutItemLabel(layout)
-        layout.addLayoutItem(gapValue_text)
-        gapValue_text.setText(str(round_percentageGAP))
-        gapValue_text.setHAlign(Qt.AlignRight)
-        gapValue_text.setVAlign(Qt.AlignTop)
-        gapValue_text.setTextFormat(keyStyle)
-        gapValue_text.attemptMove(QgsLayoutPoint(282.045, 60.175, QgsUnitTypes.LayoutMillimeters))
-        gapValue_text.attemptResize(QgsLayoutSize(9.097, 3.030, QgsUnitTypes.LayoutMillimeters)) # width, height
+        gapPercentage_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(gapPercentage_text)
+        gapPercentage_text.setText(str(round_percentageGAP))
+        gapPercentage_text.setHAlign(Qt.AlignRight)
+        gapPercentage_text.setVAlign(Qt.AlignTop)
+        gapPercentage_text.setTextFormat(keyStyle)
+        gapPercentage_text.attemptMove(QgsLayoutPoint(282.045, 60.175, QgsUnitTypes.LayoutMillimeters))
+        gapPercentage_text.attemptResize(QgsLayoutSize(9.097, 3.030, QgsUnitTypes.LayoutMillimeters)) # width, height
 
-        return gapValue_text, growthValue_text, nextTargetValue_text
+        return growthValue_text, gapValue_text, gapPercentage_text, growthPercentage_text, nextTargetValue_text
 
     legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentageGAP, round_percentagePlant)
 
@@ -571,7 +584,7 @@ def run_single_company(companies_select) -> None:
     ## Add Legend Symbols
     addLegendRectangle(layout, x=218.000, y=53.934, fill_color="#33a02c", outline=False)
     addLegendRectangle(layout, x=218.000, y=59.809, fill_color="#FF0000", outline=False)
-    addLegendRectangle(layout, x=218.000, y=65.5, fill_color="#d8d8d8", outline=False)
+    addLegendRectangle(layout, x=218.000, y=65.5, fill_color="#d1be8f", outline=False)
 
     # MAP TITLE
     def mapTitle(companies_select):
@@ -798,7 +811,7 @@ def run_single_company(companies_select) -> None:
     ### Frame for Gap Precentage
     addLine(layout=layout, x=218, y=58.888, length=74.269, orientation="horizontal") # 1st left horizontal
     addLine(layout=layout, x=218, y=64.545, length=74.269, orientation="horizontal") # 2nd left horizontal
-    addLine(layout=layout, x=218, y=70.2, length=55.168, orientation="horizontal") # 3rd left horizontal
+    addLine(layout=layout, x=218, y=70.2, length=74.269, orientation="horizontal") # 3rd left horizontal
     addLine(layout=layout, x=255.245, y=54.079, length=16.3, orientation="vertical") # 1st left vertical
     addLine(layout=layout, x=273.166, y=53.934, length=16.465, orientation="vertical") # 2nd left vertical
 
@@ -908,9 +921,9 @@ def run_single_company(companies_select) -> None:
     exporter = QgsLayoutExporter(layout)
     # exporter.exportToPdf(os.path.join(parent_dir + "/output/automation_map.pdf"), QgsLayoutExporter.PdfExportSettings())
     if companies_select == 'GPA':
-        output_pdf = os.path.join(map_path + f"GPA_Gap Detection Map_{run_day}.pdf")
+        output_pdf = os.path.join(map_path + f"{pid}_Gap Detection Map_{run_day}.pdf")
     elif companies_select == 'MNM':
-        output_pdf = os.path.join(map_path + f"MNM_Gap Detection Map_{run_day}.pdf")
+        output_pdf = os.path.join(map_path + f"{pid}_Gap Detection Map_{run_day}.pdf")
 
     result = exporter.exportToPdf(
         output_pdf,
@@ -934,8 +947,9 @@ def main():
     app.initQgis()
     try:
         for companies_select in companies_run:
-            print(f"Running for company: {companies_select}")
-            run_single_company(companies_select)
+            for pid in pid_run:    
+                print(f"Running for company: {companies_select}")
+                run_single_company(companies_select, pid)
     finally:
         app.exitQgis()
 
