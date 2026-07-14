@@ -7,16 +7,23 @@ crs: EPSG:32754
 # ── Run Configuration ───
 companies_run:
   - GPA
-  - MNM
+  # - MNM
+
+# ── Companies Alias ───
+companies_alias:
+  c1: "GPA"
+  c2: "MNM"
 
 # Notification Configuration
-parent_dir  : D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/
-logo        : D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/input/logo/comp_logo.jpg
-north_arrow : D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/input/svg/NorthArrow_11.svg
+qml_dir       : G:/TEAM SHARE/Working Directory/Damar/github/qgis_automation-layout/qml/
+logo          : D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/input/logo/comp_logo.jpg
+north_arrow   : D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/input/svg/NorthArrow_11.svg
+dam_gpa_path  : D:/00. Geo-AI Apps/automation of gap and weed detection/database/GPA/infra/DAM.shp
 
 # ── Companies-specific configuration ───
 companies:
   GPA:
+    map_title           : 'PT. GLOBAL PAPUA ABADI'
     map_path            : D:/00. Geo-AI Apps/automation of gap and weed detection/maps/GPA/
     gdb_path            : D:/00. Geo-AI Apps/automation of gap and weed detection/database/GPA/GPA.gdb
     sugarcane_gdb_path  : D:/00. Geo-AI Apps/automation of gap and weed detection/database/GPA/Sugarcane-Raw_GPA_PT.gpkg
@@ -27,6 +34,7 @@ companies:
       - 481394.500 # xmax
       - 9100938.451 # ymax
   MNM:
+    map_title           : 'PT. MURNI NUSANTARA MANDIRI'
     map_path            : D:/00. Geo-AI Apps/automation of gap and weed detection/maps/MNM/
     gdb_path            : D:/00. Geo-AI Apps/automation of gap and weed detection/database/MNM/MNM.gdb
     sugarcane_gdb_path  : D:/00. Geo-AI Apps/automation of gap and weed detection/database/MNM/Sugarcane-Raw_MNM_PT.gpkg

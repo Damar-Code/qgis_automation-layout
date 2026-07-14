@@ -43,11 +43,18 @@ from osgeo import ogr
 import fiona
 import yaml
 import math
+import sys
+from pathlib import Path
 
-CONFIG_VARIABLES = r"D:\00. Geo-AI Apps\automation of gap and weed detection\variables\qgis_layout_configuration.yaml"
+# Allow importing local helpers from the repository root
+project_root = Path(__file__).resolve().parents[1]
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
+
+from lib.summary_statistics import get_gap_summary_statistics
 
 # ── CONFIGURATION ──────────────────────────────────────────────────────────────
-configuration_variable_path = CONFIG_VARIABLES
+configuration_variable_path = os.path.join(project_root, 'config.yaml')
 with open(configuration_variable_path, 'r', encoding='utf-8') as f:
     cfg = yaml.safe_load(f)
 
@@ -55,19 +62,17 @@ companies_run       = cfg['companies_run']
 logo_path           = cfg['logo']
 north_arrow         = cfg['north_arrow']
 qgis_apps           = cfg['qgis_apps']
-
-print("companies_run: ", companies_run)
+qml_dir             = cfg['qml_dir']
+dam_gpa_path        = cfg['dam_gpa_path']
+c1                  = cfg['companies_alias']['c1']
+c2                  = cfg['companies_alias']['c2']
 
 today = date.today()
 run_day = today.strftime("%d %B %Y")
 
-## Get the Parent Directory
-script_dir  = os.path.dirname(os.path.abspath(__file__))
-parent_dir = 'D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/'
-print(parent_dir)
-
 def run_single_company(companies_select) -> None:
 
+    map_title           = cfg['companies'][companies_select]['map_title']
     map_path            = cfg['companies'][companies_select]['map_path']
     gdb_path            = cfg['companies'][companies_select]['gdb_path']
     gpkg_gaps_path      = cfg['companies'][companies_select]['gpkg_gaps_path']
@@ -101,7 +106,7 @@ def run_single_company(companies_select) -> None:
 
 
     # ADJUST LAYOUT BASED ON COMPANY
-    if companies_select == 'GPA':
+    if companies_select == c1:
 
         # MAIN MAP
         # Paddock Layer
@@ -127,6 +132,22 @@ def run_single_company(companies_select) -> None:
         )
         farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
+        # road Layer
+        road_layer = QgsVectorLayer(
+            f"{gdb_path}|layername=road",
+            "Road",
+            "ogr"
+        )
+        road_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+        # dam Layer
+        dam_layer = QgsVectorLayer(
+            dam_gpa_path,
+            "Dam",
+            "ogr"
+        )
+        dam_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
         # INDEX MAP
         # Paddock Index Layer
         paddockIndex_layer = QgsVectorLayer(
@@ -145,8 +166,9 @@ def run_single_company(companies_select) -> None:
         # Paddock Geopandas Dataframe
         gdb_paddock = gpd.read_file(gdb_path, layer='paddock')
         paddock_cp = gdb_paddock[gdb_paddock['LANDUSETYP'] == 'CP']
+        paddock_cp["Area_Ha"] = paddock_cp["Shape_Area"]/10000
 
-    elif companies_select == 'MNM':
+    elif companies_select == c2 :
 
         # MAIN MAP
         # Paddock Layer
@@ -171,6 +193,14 @@ def run_single_company(companies_select) -> None:
         )
         farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
 
+        # road Layer
+        road_layer = QgsVectorLayer(
+            f"{gdb_path}|layername=road",
+            "Road",
+            "ogr"
+        )
+        road_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
         # INDEX MAP
         # Paddock Index Layer
         paddockIndex_layer = QgsVectorLayer(
@@ -188,8 +218,7 @@ def run_single_company(companies_select) -> None:
         farmIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
         # Paddock Geopandas Dataframe
         paddock_cp = gpd.read_file(gdb_path, layer='planting')
-        paddock_cp["Area_Ha"] = paddock_cp.area/10000
-
+        paddock_cp["Area_Ha"] = paddock_cp["Shape_Area"]/10000
 
     ## GET VALUES FOR MAIN MAP INFO
     gapAR_database = gpd.read_file(gpkg_gaps_path, layer=fiona_latest_gap)
@@ -257,38 +286,54 @@ def run_single_company(companies_select) -> None:
 
     # MAIN MAP SETTING
     ## Setup Main Map Frame & Call All Layers
-    def add_mainMap(gap_layer, paddock_layer, farm_layer, paddockToponimi_layer):
+    def add_mainMap():
 
         # Load the styles
         ## Gap
-        gap_layer_style_path = (parent_dir +"/input/style/GapsArea_Style.qml")
+        gap_layer_style_path = os.path.join(qml_dir, "gapsAreaStyle.qml")
         gap_layer.loadNamedStyle(gap_layer_style_path)
         QgsProject.instance().addMapLayer(gap_layer)
         ## Paddock
-        paddock_layer_style_path = (parent_dir +"/input/style/Paddock_Style.qml")
+        paddock_layer_style_path = os.path.join(qml_dir, "paddockStyle.qml")
         paddock_layer.loadNamedStyle(paddock_layer_style_path)
         QgsProject.instance().addMapLayer(paddock_layer)
         ## Farm
         farmMain_layer = farm_layer
-        farm_layer_style_path = (parent_dir +"/input/style/Farm_Style.qml")
+        farm_layer_style_path = os.path.join(qml_dir, "farmStyle.qml")
         farmMain_layer.loadNamedStyle(farm_layer_style_path)
         QgsProject.instance().addMapLayer(farmMain_layer)
         ## Paddock Toponimi
-        if companies_select == 'GPA':
-            paddockToponimi_style_path = (parent_dir +"/input/style/PaddockTonomi_Style.qml")
+        if companies_select == c1:
+            ## Road
+            road_layer_style_path = os.path.join(qml_dir, "roadStyle.qml")
+            road_layer.loadNamedStyle(road_layer_style_path)
+            QgsProject.instance().addMapLayer(road_layer)
+
+            ## Dam
+            dam_layer_style_path = os.path.join(qml_dir, "damStyle.qml")
+            dam_layer.loadNamedStyle(dam_layer_style_path)
+            QgsProject.instance().addMapLayer(dam_layer)
+            
+            # Paddock Toponimi
+            paddockToponimi_style_path = os.path.join(qml_dir, "paddockToponimiStyle.qml")
             paddockToponimi_layer.loadNamedStyle(paddockToponimi_style_path)
             QgsProject.instance().addMapLayer(paddockToponimi_layer)
             
             map_item = QgsLayoutItemMap(layout)
-            map_item.setLayers([paddockToponimi_layer, farmMain_layer, gap_layer, paddock_layer])
+            map_item.setLayers([dam_layer, road_layer, paddockToponimi_layer, farmMain_layer, gap_layer, paddock_layer])
             
-        elif companies_select == 'MNM':
-            paddockToponimi_style_path = (parent_dir +"/input/style/PaddockTonomiMNM_Style.qml")
+        elif companies_select == c2:
+            ## Road
+            road_layer_style_path = os.path.join(qml_dir, "roadStyle_2.qml")
+            road_layer.loadNamedStyle(road_layer_style_path)
+            QgsProject.instance().addMapLayer(road_layer)
+
+            paddockToponimi_style_path = os.path.join(qml_dir, "paddockToponimiStyle_2.qml")
             paddockToponimi_layer.loadNamedStyle(paddockToponimi_style_path)
             QgsProject.instance().addMapLayer(paddockToponimi_layer)
 
             map_item = QgsLayoutItemMap(layout)
-            map_item.setLayers([farmMain_layer, gap_layer, paddockToponimi_layer, paddock_layer])
+            map_item.setLayers([road_layer, farmMain_layer, gap_layer, paddockToponimi_layer, paddock_layer])
         
 
         map_item.attemptMove(QgsLayoutPoint(4.434, 4.515, QgsUnitTypes.LayoutMillimeters))
@@ -314,7 +359,7 @@ def run_single_company(companies_select) -> None:
 
         return map_item
 
-    map_item = add_mainMap(gap_layer, paddock_layer, farm_layer, paddockToponimi_layer)
+    map_item = add_mainMap()
 
 
     # ADD LEGEND
@@ -355,37 +400,45 @@ def run_single_company(companies_select) -> None:
         for child in root_legend_group.children():
             root_legend_group.removeChildNode(child)
 
-        for child in root_group.children():
+        for layer_name in list_selected_layers:
+            for child in root_group.children():
 
-            if isinstance(child, QgsLayerTreeLayer) and child.layer().name() in list_selected_layers:
+                if isinstance(child, QgsLayerTreeLayer) and child.layer().name() in layer_name:
 
-                layer_clone = child.clone()
+                    layer_clone = child.clone()
 
-                # Only modify the Landuse Types legend
-                if layer_clone.layer().name() == "Landuse Types":
+                    # Only modify the Landuse Types legend
+                    if layer_clone.layer().name() == "Landuse Types":
 
-                    renderer = layer_clone.layer().renderer()
+                        renderer = layer_clone.layer().renderer()
 
-                    categories = [
-                        cat for cat in renderer.categories()
-                        if cat.value() not in ("CP", "", None)
-                    ]
+                        categories = [
+                            cat for cat in renderer.categories()
+                            if cat.value() not in ("CP", "", None)
+                        ]
 
-                    layer_clone.layer().setRenderer(
-                        QgsCategorizedSymbolRenderer(
-                            renderer.classAttribute(),
-                            categories
+                        layer_clone.layer().setRenderer(
+                            QgsCategorizedSymbolRenderer(
+                                renderer.classAttribute(),
+                                categories
+                            )
                         )
-                    )
 
-                root_legend_group.addChildNode(layer_clone)
+                    root_legend_group.addChildNode(layer_clone)
+                    break  # Found the layer, move to next in list_selected_layers
 
         # Refresh the legend
         legend.adjustBoxSize()
         layout.addLayoutItem(legend)
 
-    addLegend(list_selected_layers=["Farm Boundary","Landuse Types"])
+    addLegend(list_selected_layers=["Farm Boundary",  "Dam",  "Road",  "Landuse Types"])
 
+    if companies_select == c1:
+        picture_dam = QgsLayoutItemPicture(layout)
+        picture_dam.setPicturePath(os.path.join(qml_dir, "damSymbol.jpg")) 
+        picture_dam.attemptMove(QgsLayoutPoint(217, 82.5))
+        picture_dam.attemptResize(QgsLayoutSize(6.007, 4, QgsUnitTypes.LayoutMillimeters)) # width, height
+        layout.addLayoutItem(picture_dam)
 
     ## LEGEND TITLES
     def legendTitles():
@@ -578,10 +631,10 @@ def run_single_company(companies_select) -> None:
     def mapTitle(companies_select):
         main_title = QgsLayoutItemLabel(layout)
         layout.addLayoutItem(main_title)
-        if companies_select == 'GPA':
-            main_title.setText('PT. GLOBAL PAPUA ABADI')
-        elif companies_select == 'MNM':
-            main_title.setText('PT. MURNI NUSANTARA MANDIRI')
+        if companies_select == c1:
+            main_title.setText(map_title)
+        elif companies_select == c2:
+            main_title.setText(map_title)
 
         main_title.setHAlign(Qt.AlignCenter)
         main_title.setVAlign(Qt.AlignVCenter)
@@ -869,15 +922,15 @@ def run_single_company(companies_select) -> None:
         else:
             print('invalid layer')
         
-        farmIndex_layer_style_path = os.path.join(parent_dir + "/input/style/FarmIndex_Style.qml")
+        farmIndex_layer_style_path = os.path.join(qml_dir, "farmIndexStyle.qml")
         farmIndex_layer.loadNamedStyle(farmIndex_layer_style_path)
         QgsProject.instance().addMapLayer(farmIndex_layer)
 
-        gap_layer_style_path = (parent_dir +"/input/style/GapsArea_Style.qml")
+        gap_layer_style_path = os.path.join(qml_dir, "gapsAreaStyle.qml")
         gap_layer.loadNamedStyle(gap_layer_style_path)
         QgsProject.instance().addMapLayer(gap_layer)
 
-        paddockIndex_layer_style_path = os.path.join(parent_dir + "/input/style/PaddockIndex_Style.qml")
+        paddockIndex_layer_style_path = os.path.join(qml_dir, "paddockIndexStyle.qml")
         paddockIndex_layer.loadNamedStyle(paddockIndex_layer_style_path)
         QgsProject.instance().addMapLayer(paddockIndex_layer)
             
@@ -908,9 +961,9 @@ def run_single_company(companies_select) -> None:
 
     exporter = QgsLayoutExporter(layout)
     # exporter.exportToPdf(os.path.join(parent_dir + "/output/automation_map.pdf"), QgsLayoutExporter.PdfExportSettings())
-    if companies_select == 'GPA':
+    if companies_select == c1:
         output_pdf = os.path.join(map_path + f"GPA_Gap Detection Map_{run_day}.pdf")
-    elif companies_select == 'MNM':
+    elif companies_select == c2:
         output_pdf = os.path.join(map_path + f"MNM_Gap Detection Map_{run_day}.pdf")
 
     result = exporter.exportToPdf(
