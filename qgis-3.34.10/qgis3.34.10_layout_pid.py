@@ -121,6 +121,15 @@ def run_single_company(companies_select, pid) -> None:
             "ogr"
         )
         paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+        # Unplanted Paddock
+        uplantedPaddock_layer = QgsVectorLayer(
+            f"{gdb_path}|layername=paddock",
+            "Current Unplanted",
+            "ogr"
+        )
+        uplantedPaddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+        uplantedPaddock_layer.setSubsetString('\"LANDUSETYP\" = \'CU\' AND "PID" = \'JAGF-2-G-009\'') # Filter only CP
+
         # Paddock Toponomi Layer
         paddockToponimi_layer = QgsVectorLayer(
             f"{gdb_path}|layername=paddock",
@@ -157,7 +166,7 @@ def run_single_company(companies_select, pid) -> None:
         gdb_paddock_pid = gdb_paddock[gdb_paddock['PID'] == pid]  # Filter only selected PID
         gdb_paddock_pid["Area_Ha"] = gdb_paddock_pid["Shape_Area"]/10000
         paddock_cp = gdb_paddock_pid[gdb_paddock_pid['LANDUSETYP'] == 'CP']
-        paddock_up = gdb_paddock_pid[gdb_paddock_pid['LANDUSETYP'] == 'CU']
+        paddock_cu = gdb_paddock_pid[gdb_paddock_pid['LANDUSETYP'] == 'CU']
 
     elif companies_select == c2:
 
@@ -209,19 +218,19 @@ def run_single_company(companies_select, pid) -> None:
     gapAR_pid = gapAR_database[gapAR_database['pid'] == pid]  # Filter only selected PID
     # Gap Ha
     gapHA = sum(gapAR_pid[gapAR_pid['cls'] == 'gaps spot']['cls_area_ha'])
-    round_gapHA = round(gapHA,3)
+    round_gapHA = round(gapHA, 2)
     # print(round_gapHA)
     # Growth Plant Ha
     plantHA = sum(gapAR_pid[gapAR_pid['cls'] == 'plant']['cls_area_ha'])
-    round_plantHA = round(plantHA,3)
+    round_plantHA = round(plantHA, 2)
     # print(round_plantHA)
     # Percentage Gap
     percentageGAP = gapHA/(gapHA + plantHA)*100
-    round_percentageGAP = round(percentageGAP,2)
+    round_percentageGAP = round(percentageGAP, 2)
     # print(round_percentageGAP)
     # Percentage Growth Plant
     percentagePlant = plantHA/(gapHA + plantHA)*100
-    round_percentagePlant = round(percentagePlant,2)
+    round_percentagePlant = round(percentagePlant, 2)
     # print(round_percentagePlant)
     # print(round_percentagePlant+round_percentageGAP)
     # Photo latest and newest
@@ -231,14 +240,15 @@ def run_single_company(companies_select, pid) -> None:
     # print(newest_date)
 
     # Next Target
-    print('paddock_up', paddock_up)
     if companies_select == c1:
-        nextTarget = round(sum(paddock_up['Area_Ha']), 3)
-        unPercentage = round(nextTarget/(sum(paddock_up['Area_Ha']) + sum(paddock_cp['Area_Ha']))*100, 2)
+        round_cuValue = round(sum(paddock_cu['Area_Ha']), 2)
+        round_cuPercentage = round(sum(paddock_cu['Area_Ha'])/(sum(paddock_cp['Area_Ha'])+sum(paddock_cu['Area_Ha']))*100, 2)
     if companies_select == c2:
-        nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
-        nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
-
+        print('pass')
+        # nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
+        # nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
+    print('round_cuValue: ', round_cuValue)
+    print('round_cuPercentage: ', round_cuPercentage)
     # PRODUCE LAYOUTING MANAGER
     manager = project.layoutManager()
     layout_name = "Automation Map"
@@ -277,13 +287,17 @@ def run_single_company(companies_select, pid) -> None:
 
     # MAIN MAP SETTING
     ## Setup Main Map Frame & Call All Layers
-    def add_mainMap(gap_layer, paddock_layer, farm_layer, paddockToponimi_layer):
+    def add_mainMap():
 
         # Load the styles
         ## Gap
-        gap_layer_style_path = os.path.join(qml_dir, "gapsAreaStyle.qml")
+        gap_layer_style_path = os.path.join(qml_dir, "gapsAreaStyle_pidLevel.qml")
         gap_layer.loadNamedStyle(gap_layer_style_path)
         QgsProject.instance().addMapLayer(gap_layer)
+        ## Current Unplanted
+        uplantedPaddock_layer_style = os.path.join(qml_dir, "CUStyle.qml")
+        uplantedPaddock_layer.loadNamedStyle(uplantedPaddock_layer_style)
+        QgsProject.instance().addMapLayer(uplantedPaddock_layer)
         ## Paddock
         paddock_layer_style_path = os.path.join(qml_dir, "paddockStyle.qml")
         paddock_layer.loadNamedStyle(paddock_layer_style_path)
@@ -300,7 +314,7 @@ def run_single_company(companies_select, pid) -> None:
             QgsProject.instance().addMapLayer(paddockToponimi_layer)
             
             map_item = QgsLayoutItemMap(layout)
-            map_item.setLayers([paddockToponimi_layer, farmMain_layer, gap_layer, paddock_layer])
+            map_item.setLayers([farmMain_layer, gap_layer, uplantedPaddock_layer, paddock_layer])
             
         elif companies_select == c2:
             paddockToponimi_style_path = os.path.join(qml_dir, "paddockTonomiStyle_2.qml")
@@ -334,7 +348,7 @@ def run_single_company(companies_select, pid) -> None:
 
         return map_item
 
-    map_item = add_mainMap(gap_layer, paddock_layer, farm_layer, paddockToponimi_layer)
+    map_item = add_mainMap()
 
 
     # ADD LEGEND
@@ -406,6 +420,74 @@ def run_single_company(companies_select, pid) -> None:
 
     addLegend(list_selected_layers=["Farm Boundary","Landuse Types"])
 
+    def addLegend2(list_selected_layers):
+        # Add Legend Based on Checked Layers
+        legend = QgsLayoutItemLegend(layout)
+        # legend.setLegendFilterByMapEnabled(True) # Force to only visualize layer features within the extent
+        # legend.setLinkedMap(map_item) # Force to only visualize layer features within the extent
+
+        legend.attemptMove(QgsLayoutPoint(216, 60.1, QgsUnitTypes.LayoutMillimeters))
+        legend.attemptResize(QgsLayoutSize(31.936, 50.598, QgsUnitTypes.LayoutMillimeters))
+        legend.setBackgroundEnabled(False)
+        legend.setAutoUpdateModel(False)  # This line is important!!
+
+        font = QgsTextFormat()
+        font.setForcedBold(True)
+        font.setColor(Qt.GlobalColor.black)
+        font.setSize(7)
+        legend.rstyle(QgsLegendStyle.Subgroup).setTextFormat(font)
+
+        # # SymbolLabel label style
+        font = QgsTextFormat()
+        font.setForcedBold(False)
+        font.setColor(Qt.GlobalColor.black)
+        font.setSize(7)
+        legend.rstyle(QgsLegendStyle.SymbolLabel).setTextFormat(font)
+
+        # Symbol size
+        legend.setSymbolWidth(4)      # mm
+        legend.setSymbolHeight(4)     # mm
+
+        # Get the legend model and the root group
+        root_group  = project.layerTreeRoot()
+        legend_model = legend.model()
+        root_legend_group = legend_model.rootGroup()
+
+        # Remove all children from the root legend group
+        for child in root_legend_group.children():
+            root_legend_group.removeChildNode(child)
+
+        for child in root_group.children():
+
+            if isinstance(child, QgsLayerTreeLayer) and child.layer().name() in list_selected_layers:
+
+                layer_clone = child.clone()
+
+                # Only modify the Landuse Types legend
+                if layer_clone.layer().name() == "Landuse Types":
+
+                    renderer = layer_clone.layer().renderer()
+
+                    categories = [
+                        cat for cat in renderer.categories()
+                        if cat.value() not in ("CP", "", None)
+                    ]
+
+                    layer_clone.layer().setRenderer(
+                        QgsCategorizedSymbolRenderer(
+                            renderer.classAttribute(),
+                            categories
+                        )
+                    )
+
+                root_legend_group.addChildNode(layer_clone)
+
+        # Refresh the legend
+        legend.adjustBoxSize()
+        layout.addLayoutItem(legend)
+
+    addLegend2(list_selected_layers=["Current Unplanted"])
+
 
     ## LEGEND TITLES
     def legendTitles():
@@ -472,15 +554,15 @@ def run_single_company(companies_select, pid) -> None:
         gap_text.attemptMove(QgsLayoutPoint(223.997, 60.337, QgsUnitTypes.LayoutMillimeters))
         gap_text.attemptResize(QgsLayoutSize(18.903, 2.792, QgsUnitTypes.LayoutMillimeters)) # width, height
 
-        # Next Target
-        gap_text = QgsLayoutItemLabel(layout)
-        layout.addLayoutItem(gap_text)
-        gap_text.setText("Current Unplanted")
-        gap_text.setHAlign(Qt.AlignLeft)
-        gap_text.setVAlign(Qt.AlignTop)
-        gap_text.setTextFormat(gap_info_syle)
-        gap_text.attemptMove(QgsLayoutPoint(223.997, 65.846, QgsUnitTypes.LayoutMillimeters))
-        gap_text.attemptResize(QgsLayoutSize(30.873, 2.899, QgsUnitTypes.LayoutMillimeters)) # width, height
+        # # Next Target
+        # gap_text = QgsLayoutItemLabel(layout)
+        # layout.addLayoutItem(gap_text)
+        # gap_text.setText("Current Unplanted")
+        # gap_text.setHAlign(Qt.AlignLeft)
+        # gap_text.setVAlign(Qt.AlignTop)
+        # gap_text.setTextFormat(gap_info_syle)
+        # gap_text.attemptMove(QgsLayoutPoint(223.997, 65.846, QgsUnitTypes.LayoutMillimeters))
+        # gap_text.attemptResize(QgsLayoutSize(30.873, 2.899, QgsUnitTypes.LayoutMillimeters)) # width, height
         
 
         return titles, areaHA_title, percentage_title, gap_text
@@ -489,7 +571,7 @@ def run_single_company(companies_select, pid) -> None:
 
 
     ## LEGEND MAIN INFO VALUES
-    def legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentageGAP, round_percentagePlant):
+    def legendMainInfoValues():
         
         keyStyle = QgsTextFormat()
         keyStyle.setColor(Qt.GlobalColor.black)
@@ -515,15 +597,15 @@ def run_single_company(companies_select, pid) -> None:
         gapValue_text.attemptMove(QgsLayoutPoint(257.537, 60.222, QgsUnitTypes.LayoutMillimeters))
         gapValue_text.attemptResize(QgsLayoutSize(14.662, 3.074, QgsUnitTypes.LayoutMillimeters)) # width, height
     
-        # Next Target
-        nextTargetValue_text = QgsLayoutItemLabel(layout)
-        layout.addLayoutItem(nextTargetValue_text)
-        nextTargetValue_text.setText(str(nextTarget))
-        nextTargetValue_text.setHAlign(Qt.AlignRight)
-        nextTargetValue_text.setVAlign(Qt.AlignTop)
-        nextTargetValue_text.setTextFormat(keyStyle)
-        nextTargetValue_text.attemptMove(QgsLayoutPoint(262.257, 66.029, QgsUnitTypes.LayoutMillimeters))
-        nextTargetValue_text.attemptResize(QgsLayoutSize(9.943, 2.605, QgsUnitTypes.LayoutMillimeters)) # width, height
+        # Current Unplanted
+        cuValue_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(cuValue_text)
+        cuValue_text.setText(str(round_cuValue))
+        cuValue_text.setHAlign(Qt.AlignRight)
+        cuValue_text.setVAlign(Qt.AlignTop)
+        cuValue_text.setTextFormat(keyStyle)
+        cuValue_text.attemptMove(QgsLayoutPoint(262.257, 66.029, QgsUnitTypes.LayoutMillimeters))
+        cuValue_text.attemptResize(QgsLayoutSize(9.943, 2.605, QgsUnitTypes.LayoutMillimeters)) # width, height
 
         # Percentage Growth Plant
         growthPercentage_text = QgsLayoutItemLabel(layout)
@@ -545,9 +627,19 @@ def run_single_company(companies_select, pid) -> None:
         gapPercentage_text.attemptMove(QgsLayoutPoint(282.045, 60.175, QgsUnitTypes.LayoutMillimeters))
         gapPercentage_text.attemptResize(QgsLayoutSize(9.097, 3.030, QgsUnitTypes.LayoutMillimeters)) # width, height
 
-        return growthValue_text, gapValue_text, gapPercentage_text, growthPercentage_text, nextTargetValue_text
+        # Percentage Gap
+        gapPercentage_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(gapPercentage_text)
+        gapPercentage_text.setText(str(round_cuPercentage))
+        gapPercentage_text.setHAlign(Qt.AlignRight)
+        gapPercentage_text.setVAlign(Qt.AlignTop)
+        gapPercentage_text.setTextFormat(keyStyle)
+        gapPercentage_text.attemptMove(QgsLayoutPoint(282.045, 66.029, QgsUnitTypes.LayoutMillimeters))
+        gapPercentage_text.attemptResize(QgsLayoutSize(9.097, 3.030, QgsUnitTypes.LayoutMillimeters)) # width, height
 
-    legendMainInfoValues(round_gapHA, round_plantHA, nextTarget, round_percentageGAP, round_percentagePlant)
+        return growthValue_text, gapValue_text, gapPercentage_text, growthPercentage_text, cuValue_text
+
+    legendMainInfoValues()
 
 
     ## LEGEND SYMBOLS
@@ -591,7 +683,7 @@ def run_single_company(companies_select, pid) -> None:
     ## Add Legend Symbols
     addLegendRectangle(layout, x=218.000, y=53.934, fill_color="#33a02c", outline=False)
     addLegendRectangle(layout, x=218.000, y=59.809, fill_color="#FF0000", outline=False)
-    addLegendRectangle(layout, x=218.000, y=65.5, fill_color="#d1be8f", outline=False)
+    # addLegendRectangle(layout, x=218.000, y=65.5, fill_color="#d1be8f", outline=False)
 
     # MAP TITLE
     def mapTitle(companies_select):
@@ -892,7 +984,7 @@ def run_single_company(companies_select, pid) -> None:
         farmIndex_layer.loadNamedStyle(farmIndex_layer_style_path)
         QgsProject.instance().addMapLayer(farmIndex_layer)
 
-        gap_layer_style_path = os.path.join(qml_dir, "gapsAreaStyle.qml")
+        gap_layer_style_path = os.path.join(qml_dir, "gapsAreaStyle_pidLevel.qml")
         gap_layer.loadNamedStyle(gap_layer_style_path)
         QgsProject.instance().addMapLayer(gap_layer)
 
