@@ -686,7 +686,7 @@ def run_single_company(companies_select, pid) -> None:
     # addLegendRectangle(layout, x=218.000, y=65.5, fill_color="#d1be8f", outline=False)
 
     # MAP TITLE
-    def mapTitle(companies_select):
+    def mapTitle():
         main_title = QgsLayoutItemLabel(layout)
         layout.addLayoutItem(main_title)
         if companies_select == c1:
@@ -696,7 +696,7 @@ def run_single_company(companies_select, pid) -> None:
 
         main_title.setHAlign(Qt.AlignCenter)
         main_title.setVAlign(Qt.AlignVCenter)
-        main_title.attemptMove(QgsLayoutPoint(233.448, 7.964, QgsUnitTypes.LayoutMillimeters))
+        main_title.attemptMove(QgsLayoutPoint(233.448, 6.964, QgsUnitTypes.LayoutMillimeters))
         main_title.attemptResize(QgsLayoutSize(58.971, 6.406, QgsUnitTypes.LayoutMillimeters)) # width, height
         main_title_style = QgsTextFormat()
         main_title_style.setColor(Qt.GlobalColor.black)
@@ -704,23 +704,34 @@ def run_single_company(companies_select, pid) -> None:
         main_title_style.setForcedBold(True)
         main_title.setTextFormat(main_title_style)
 
+        pid_title = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(pid_title)
+        pid_title.setText(pid)
+        pid_title.setHAlign(Qt.AlignCenter)
+        pid_title.setVAlign(Qt.AlignVCenter)
+        pid_title.attemptMove(QgsLayoutPoint(233.448, 12.255, QgsUnitTypes.LayoutMillimeters))
+        pid_title.attemptResize(QgsLayoutSize(58.880, 4.123, QgsUnitTypes.LayoutMillimeters)) # width, height
+        pid_title_style = QgsTextFormat()
+        pid_title_style.setColor(Qt.GlobalColor.black)
+        pid_title_style.setSize(8)
+        pid_title_style.setForcedBold(True)
+        pid_title.setTextFormat(pid_title_style)
+
         sub_title = QgsLayoutItemLabel(layout)
         layout.addLayoutItem(sub_title)
         sub_title.setText('Gap Detection Map')
         sub_title.setHAlign(Qt.AlignCenter)
         sub_title.setVAlign(Qt.AlignVCenter)
-        sub_title.attemptMove(QgsLayoutPoint(233.448, 13.544, QgsUnitTypes.LayoutMillimeters))
-        sub_title.attemptResize(QgsLayoutSize(58.970, 4.885, QgsUnitTypes.LayoutMillimeters)) # width, height
+        sub_title.attemptMove(QgsLayoutPoint(233.448, 16.378, QgsUnitTypes.LayoutMillimeters))
+        sub_title.attemptResize(QgsLayoutSize(58.880, 4.341, QgsUnitTypes.LayoutMillimeters)) # width, height
         sub_title_style = QgsTextFormat()
         sub_title_style.setColor(Qt.GlobalColor.black)
-        sub_title_style.setSize(8)
+        sub_title_style.setSize(6)
         sub_title_style.setForcedBold(True)
         sub_title.setTextFormat(sub_title_style)
+        return main_title, pid_title, sub_title
 
-
-        return main_title, sub_title
-
-    mapTitle(companies_select)
+    mapTitle()
 
     # MAP DATE
     def mapDate(run_day):
@@ -729,11 +740,11 @@ def run_single_company(companies_select, pid) -> None:
         main_date.setText(f"As of {run_day}")
         main_date.setHAlign(Qt.AlignCenter)
         main_date.setVAlign(Qt.AlignVCenter)
-        main_date.attemptMove(QgsLayoutPoint(233.448, 18.430, QgsUnitTypes.LayoutMillimeters))
+        main_date.attemptMove(QgsLayoutPoint(233.184, 20.072, QgsUnitTypes.LayoutMillimeters))
         main_date.attemptResize(QgsLayoutSize(58.970, 4.885, QgsUnitTypes.LayoutMillimeters)) # width, height
         main_date_style = QgsTextFormat()
         main_date_style.setColor(Qt.GlobalColor.black)
-        main_date_style.setSize(7)
+        main_date_style.setSize(6)
         main_date.setTextFormat(main_date_style)
         return main_date
 
@@ -767,7 +778,7 @@ def run_single_company(companies_select, pid) -> None:
         scalebar_item.setNumberOfSegments(2)
 
         scalebar_item.setMinimumBarWidth(28)
-        scalebar_item.setMaximumBarWidth(33)
+        scalebar_item.setMaximumBarWidth(30)
 
         scalebar_item.setHeight(0.7)
         scalebar_item.setLabelVerticalPlacement(QgsScaleBarSettings.LabelBelowSegment)

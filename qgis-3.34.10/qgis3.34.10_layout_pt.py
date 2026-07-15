@@ -709,7 +709,7 @@ def run_single_company(companies_select) -> None:
         scalebar_item.setNumberOfSegments(2)
 
         scalebar_item.setMinimumBarWidth(28)
-        scalebar_item.setMaximumBarWidth(33)
+        scalebar_item.setMaximumBarWidth(30)
 
         scalebar_item.setHeight(0.7)
         scalebar_item.setLabelVerticalPlacement(QgsScaleBarSettings.LabelBelowSegment)
