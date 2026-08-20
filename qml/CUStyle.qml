@@ -1,18 +1,18 @@
 <!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
-<qgis labelsEnabled="0" simplifyLocal="1" simplifyDrawingHints="1" hasScaleBasedVisibilityFlag="0" minScale="0" simplifyMaxScale="1" readOnly="0" simplifyAlgorithm="0" version="3.34.10-Prizren" styleCategories="AllStyleCategories" symbologyReferenceScale="-1" simplifyDrawingTol="1" maxScale="0">
+<qgis styleCategories="AllStyleCategories" hasScaleBasedVisibilityFlag="0" version="3.34.10-Prizren" simplifyAlgorithm="0" simplifyLocal="1" simplifyDrawingTol="1" readOnly="0" minScale="0" simplifyMaxScale="1" symbologyReferenceScale="-1" simplifyDrawingHints="1" maxScale="0" labelsEnabled="0">
   <flags>
     <Identifiable>1</Identifiable>
     <Removable>1</Removable>
     <Searchable>1</Searchable>
     <Private>0</Private>
   </flags>
-  <temporal endExpression="" durationField="" fixedDuration="0" durationUnit="min" startField="" startExpression="" limitMode="0" endField="" accumulate="0" enabled="0" mode="0">
+  <temporal enabled="0" limitMode="0" mode="0" startField="" fixedDuration="0" endField="" endExpression="" durationField="" accumulate="0" durationUnit="min" startExpression="">
     <fixedRange>
       <start></start>
       <end></end>
     </fixedRange>
   </temporal>
-  <elevation type="IndividualFeatures" extrusion="0" respectLayerSymbol="1" zscale="1" symbology="Line" extrusionEnabled="0" binding="Centroid" clamping="Terrain" showMarkerSymbolInSurfacePlots="0" zoffset="0">
+  <elevation clamping="Terrain" symbology="Line" respectLayerSymbol="1" extrusion="0" type="IndividualFeatures" showMarkerSymbolInSurfacePlots="0" extrusionEnabled="0" zscale="1" binding="Centroid" zoffset="0">
     <data-defined-properties>
       <Option type="Map">
         <Option type="QString" name="name" value=""/>
@@ -21,7 +21,7 @@
       </Option>
     </data-defined-properties>
     <profileLineSymbol>
-      <symbol type="line" is_animated="0" name="" frame_rate="10" alpha="1" force_rhr="0" clip_to_extent="1">
+      <symbol frame_rate="10" is_animated="0" type="line" name="" clip_to_extent="1" alpha="1" force_rhr="0">
         <data_defined_properties>
           <Option type="Map">
             <Option type="QString" name="name" value=""/>
@@ -29,7 +29,7 @@
             <Option type="QString" name="type" value="collection"/>
           </Option>
         </data_defined_properties>
-        <layer pass="0" id="{a3768741-95a9-4764-9755-16a225eb232e}" class="SimpleLine" locked="0" enabled="1">
+        <layer class="SimpleLine" enabled="1" locked="0" pass="0" id="{a3768741-95a9-4764-9755-16a225eb232e}">
           <Option type="Map">
             <Option type="QString" name="align_dash_pattern" value="0"/>
             <Option type="QString" name="capstyle" value="square"/>
@@ -70,7 +70,7 @@
       </symbol>
     </profileLineSymbol>
     <profileFillSymbol>
-      <symbol type="fill" is_animated="0" name="" frame_rate="10" alpha="1" force_rhr="0" clip_to_extent="1">
+      <symbol frame_rate="10" is_animated="0" type="fill" name="" clip_to_extent="1" alpha="1" force_rhr="0">
         <data_defined_properties>
           <Option type="Map">
             <Option type="QString" name="name" value=""/>
@@ -78,7 +78,7 @@
             <Option type="QString" name="type" value="collection"/>
           </Option>
         </data_defined_properties>
-        <layer pass="0" id="{ab2dfaa8-c44b-4a11-a4b5-af8209937bf8}" class="SimpleFill" locked="0" enabled="1">
+        <layer class="SimpleFill" enabled="1" locked="0" pass="0" id="{ab2dfaa8-c44b-4a11-a4b5-af8209937bf8}">
           <Option type="Map">
             <Option type="QString" name="border_width_map_unit_scale" value="3x:0,0,0,0,0,0"/>
             <Option type="QString" name="color" value="164,113,88,255"/>
@@ -103,7 +103,7 @@
       </symbol>
     </profileFillSymbol>
     <profileMarkerSymbol>
-      <symbol type="marker" is_animated="0" name="" frame_rate="10" alpha="1" force_rhr="0" clip_to_extent="1">
+      <symbol frame_rate="10" is_animated="0" type="marker" name="" clip_to_extent="1" alpha="1" force_rhr="0">
         <data_defined_properties>
           <Option type="Map">
             <Option type="QString" name="name" value=""/>
@@ -111,7 +111,7 @@
             <Option type="QString" name="type" value="collection"/>
           </Option>
         </data_defined_properties>
-        <layer pass="0" id="{5af52b20-5bda-4c81-88f6-0fed9e054768}" class="SimpleMarker" locked="0" enabled="1">
+        <layer class="SimpleMarker" enabled="1" locked="0" pass="0" id="{5af52b20-5bda-4c81-88f6-0fed9e054768}">
           <Option type="Map">
             <Option type="QString" name="angle" value="0"/>
             <Option type="QString" name="cap_style" value="square"/>
@@ -144,9 +144,9 @@
       </symbol>
     </profileMarkerSymbol>
   </elevation>
-  <renderer-v2 type="singleSymbol" symbollevels="0" referencescale="-1" enableorderby="0" forceraster="0">
+  <renderer-v2 forceraster="0" symbollevels="0" type="singleSymbol" enableorderby="0" referencescale="-1">
     <symbols>
-      <symbol type="fill" is_animated="0" name="0" frame_rate="10" alpha="1" force_rhr="0" clip_to_extent="1">
+      <symbol frame_rate="10" is_animated="0" type="fill" name="0" clip_to_extent="1" alpha="1" force_rhr="0">
         <data_defined_properties>
           <Option type="Map">
             <Option type="QString" name="name" value=""/>
@@ -154,7 +154,7 @@
             <Option type="QString" name="type" value="collection"/>
           </Option>
         </data_defined_properties>
-        <layer pass="0" id="{6ab63a1a-0133-4eb3-9789-c96ab936c46e}" class="LinePatternFill" locked="0" enabled="1">
+        <layer class="LinePatternFill" enabled="1" locked="0" pass="0" id="{6ab63a1a-0133-4eb3-9789-c96ab936c46e}">
           <Option type="Map">
             <Option type="QString" name="angle" value="45"/>
             <Option type="QString" name="clip_mode" value="during_render"/>
@@ -179,7 +179,7 @@
               <Option type="QString" name="type" value="collection"/>
             </Option>
           </data_defined_properties>
-          <symbol type="line" is_animated="0" name="@0@0" frame_rate="10" alpha="1" force_rhr="0" clip_to_extent="1">
+          <symbol frame_rate="10" is_animated="0" type="line" name="@0@0" clip_to_extent="1" alpha="1" force_rhr="0">
             <data_defined_properties>
               <Option type="Map">
                 <Option type="QString" name="name" value=""/>
@@ -187,7 +187,7 @@
                 <Option type="QString" name="type" value="collection"/>
               </Option>
             </data_defined_properties>
-            <layer pass="0" id="{22c563ed-bd04-412f-b190-72618def0686}" class="SimpleLine" locked="0" enabled="1">
+            <layer class="SimpleLine" enabled="1" locked="0" pass="0" id="{22c563ed-bd04-412f-b190-72618def0686}">
               <Option type="Map">
                 <Option type="QString" name="align_dash_pattern" value="0"/>
                 <Option type="QString" name="capstyle" value="square"/>
@@ -227,7 +227,7 @@
             </layer>
           </symbol>
         </layer>
-        <layer pass="0" id="{4cb905e9-9be5-48ed-a43f-ad9ee6657967}" class="SimpleLine" locked="0" enabled="1">
+        <layer class="SimpleLine" enabled="1" locked="0" pass="0" id="{4cb905e9-9be5-48ed-a43f-ad9ee6657967}">
           <Option type="Map">
             <Option type="QString" name="align_dash_pattern" value="0"/>
             <Option type="QString" name="capstyle" value="square"/>
@@ -273,7 +273,7 @@
   <selection mode="Default">
     <selectionColor invalid="1"/>
     <selectionSymbol>
-      <symbol type="fill" is_animated="0" name="" frame_rate="10" alpha="1" force_rhr="0" clip_to_extent="1">
+      <symbol frame_rate="10" is_animated="0" type="fill" name="" clip_to_extent="1" alpha="1" force_rhr="0">
         <data_defined_properties>
           <Option type="Map">
             <Option type="QString" name="name" value=""/>
@@ -281,7 +281,7 @@
             <Option type="QString" name="type" value="collection"/>
           </Option>
         </data_defined_properties>
-        <layer pass="0" id="{113593ea-a683-4f48-bb87-edd83a13d912}" class="SimpleFill" locked="0" enabled="1">
+        <layer class="SimpleFill" enabled="1" locked="0" pass="0" id="{113593ea-a683-4f48-bb87-edd83a13d912}">
           <Option type="Map">
             <Option type="QString" name="border_width_map_unit_scale" value="3x:0,0,0,0,0,0"/>
             <Option type="QString" name="color" value="0,0,255,255"/>
@@ -330,11 +330,12 @@
   <blendMode>0</blendMode>
   <featureBlendMode>0</featureBlendMode>
   <layerOpacity>1</layerOpacity>
-  <SingleCategoryDiagramRenderer attributeLegend="1" diagramType="Histogram">
-    <DiagramCategory lineSizeType="MM" height="15" spacingUnit="MM" enabled="0" sizeType="MM" barWidth="5" backgroundAlpha="255" minimumSize="0" diagramOrientation="Up" sizeScale="3x:0,0,0,0,0,0" spacingUnitScale="3x:0,0,0,0,0,0" lineSizeScale="3x:0,0,0,0,0,0" spacing="5" showAxis="1" penAlpha="255" rotationOffset="270" width="15" backgroundColor="#ffffff" labelPlacementMethod="XHeight" penWidth="0" scaleDependency="Area" penColor="#000000" scaleBasedVisibility="0" minScaleDenominator="0" opacity="1" direction="0" maxScaleDenominator="0">
-      <fontProperties underline="0" style="" strikethrough="0" italic="0" description="MS Shell Dlg 2,8.3,-1,5,50,0,0,0,0,0" bold="0"/>
+  <SingleCategoryDiagramRenderer diagramType="Histogram" attributeLegend="1">
+    <DiagramCategory minScaleDenominator="0" direction="0" diagramOrientation="Up" scaleDependency="Area" backgroundAlpha="255" scaleBasedVisibility="0" spacingUnit="MM" rotationOffset="270" labelPlacementMethod="XHeight" minimumSize="0" showAxis="1" lineSizeType="MM" width="15" spacing="5" maxScaleDenominator="0" spacingUnitScale="3x:0,0,0,0,0,0" penAlpha="255" penWidth="0" opacity="1" height="15" sizeType="MM" backgroundColor="#ffffff" penColor="#000000" sizeScale="3x:0,0,0,0,0,0" barWidth="5" enabled="0" lineSizeScale="3x:0,0,0,0,0,0">
+      <fontProperties bold="0" description="MS Shell Dlg 2,8.3,-1,5,50,0,0,0,0,0" strikethrough="0" style="" italic="0" underline="0"/>
+      <attribute colorOpacity="1" field="" label="" color="#000000"/>
       <axisSymbol>
-        <symbol type="line" is_animated="0" name="" frame_rate="10" alpha="1" force_rhr="0" clip_to_extent="1">
+        <symbol frame_rate="10" is_animated="0" type="line" name="" clip_to_extent="1" alpha="1" force_rhr="0">
           <data_defined_properties>
             <Option type="Map">
               <Option type="QString" name="name" value=""/>
@@ -342,7 +343,7 @@
               <Option type="QString" name="type" value="collection"/>
             </Option>
           </data_defined_properties>
-          <layer pass="0" id="{7b07cd3f-3aec-444c-a0b6-a7ad79533686}" class="SimpleLine" locked="0" enabled="1">
+          <layer class="SimpleLine" enabled="1" locked="0" pass="0" id="{7b07cd3f-3aec-444c-a0b6-a7ad79533686}">
             <Option type="Map">
               <Option type="QString" name="align_dash_pattern" value="0"/>
               <Option type="QString" name="capstyle" value="square"/>
@@ -384,7 +385,7 @@
       </axisSymbol>
     </DiagramCategory>
   </SingleCategoryDiagramRenderer>
-  <DiagramLayerSettings obstacle="0" dist="0" placement="1" showAll="1" zIndex="0" linePlacementFlags="18" priority="0">
+  <DiagramLayerSettings placement="1" obstacle="0" showAll="1" priority="0" dist="0" zIndex="0" linePlacementFlags="18">
     <properties>
       <Option type="Map">
         <Option type="QString" name="name" value=""/>
@@ -393,7 +394,7 @@
       </Option>
     </properties>
   </DiagramLayerSettings>
-  <geometryOptions removeDuplicateNodes="0" geometryPrecision="0">
+  <geometryOptions geometryPrecision="0" removeDuplicateNodes="0">
     <activeChecks/>
     <checkConfiguration type="Map">
       <Option type="Map" name="QgsGeometryGapCheck">
@@ -485,88 +486,88 @@
     </field>
   </fieldConfiguration>
   <aliases>
-    <alias index="0" name="" field="OBJECTID"/>
-    <alias index="1" name="" field="REGION"/>
-    <alias index="2" name="" field="FARM"/>
-    <alias index="3" name="" field="BLOCK"/>
-    <alias index="4" name="" field="PADDOCK"/>
-    <alias index="5" name="" field="PID"/>
-    <alias index="6" name="" field="LANDUSETYP"/>
-    <alias index="7" name="" field="LINK"/>
-    <alias index="8" name="" field="PRIORITY"/>
-    <alias index="9" name="" field="Shape_Length"/>
-    <alias index="10" name="" field="Shape_Area"/>
+    <alias field="OBJECTID" name="" index="0"/>
+    <alias field="REGION" name="" index="1"/>
+    <alias field="FARM" name="" index="2"/>
+    <alias field="BLOCK" name="" index="3"/>
+    <alias field="PADDOCK" name="" index="4"/>
+    <alias field="PID" name="" index="5"/>
+    <alias field="LANDUSETYP" name="" index="6"/>
+    <alias field="LINK" name="" index="7"/>
+    <alias field="PRIORITY" name="" index="8"/>
+    <alias field="Shape_Length" name="" index="9"/>
+    <alias field="Shape_Area" name="" index="10"/>
   </aliases>
   <splitPolicies>
-    <policy policy="Duplicate" field="OBJECTID"/>
-    <policy policy="Duplicate" field="REGION"/>
-    <policy policy="Duplicate" field="FARM"/>
-    <policy policy="Duplicate" field="BLOCK"/>
-    <policy policy="Duplicate" field="PADDOCK"/>
-    <policy policy="Duplicate" field="PID"/>
-    <policy policy="Duplicate" field="LANDUSETYP"/>
-    <policy policy="Duplicate" field="LINK"/>
-    <policy policy="Duplicate" field="PRIORITY"/>
-    <policy policy="Duplicate" field="Shape_Length"/>
-    <policy policy="Duplicate" field="Shape_Area"/>
+    <policy field="OBJECTID" policy="Duplicate"/>
+    <policy field="REGION" policy="Duplicate"/>
+    <policy field="FARM" policy="Duplicate"/>
+    <policy field="BLOCK" policy="Duplicate"/>
+    <policy field="PADDOCK" policy="Duplicate"/>
+    <policy field="PID" policy="Duplicate"/>
+    <policy field="LANDUSETYP" policy="Duplicate"/>
+    <policy field="LINK" policy="Duplicate"/>
+    <policy field="PRIORITY" policy="Duplicate"/>
+    <policy field="Shape_Length" policy="Duplicate"/>
+    <policy field="Shape_Area" policy="Duplicate"/>
   </splitPolicies>
   <defaults>
-    <default applyOnUpdate="0" field="OBJECTID" expression=""/>
-    <default applyOnUpdate="0" field="REGION" expression=""/>
-    <default applyOnUpdate="0" field="FARM" expression=""/>
-    <default applyOnUpdate="0" field="BLOCK" expression=""/>
-    <default applyOnUpdate="0" field="PADDOCK" expression=""/>
-    <default applyOnUpdate="0" field="PID" expression=""/>
-    <default applyOnUpdate="0" field="LANDUSETYP" expression=""/>
-    <default applyOnUpdate="0" field="LINK" expression=""/>
-    <default applyOnUpdate="0" field="PRIORITY" expression=""/>
-    <default applyOnUpdate="0" field="Shape_Length" expression=""/>
-    <default applyOnUpdate="0" field="Shape_Area" expression=""/>
+    <default field="OBJECTID" applyOnUpdate="0" expression=""/>
+    <default field="REGION" applyOnUpdate="0" expression=""/>
+    <default field="FARM" applyOnUpdate="0" expression=""/>
+    <default field="BLOCK" applyOnUpdate="0" expression=""/>
+    <default field="PADDOCK" applyOnUpdate="0" expression=""/>
+    <default field="PID" applyOnUpdate="0" expression=""/>
+    <default field="LANDUSETYP" applyOnUpdate="0" expression=""/>
+    <default field="LINK" applyOnUpdate="0" expression=""/>
+    <default field="PRIORITY" applyOnUpdate="0" expression=""/>
+    <default field="Shape_Length" applyOnUpdate="0" expression=""/>
+    <default field="Shape_Area" applyOnUpdate="0" expression=""/>
   </defaults>
   <constraints>
-    <constraint exp_strength="0" unique_strength="1" notnull_strength="1" field="OBJECTID" constraints="3"/>
-    <constraint exp_strength="0" unique_strength="0" notnull_strength="0" field="REGION" constraints="0"/>
-    <constraint exp_strength="0" unique_strength="0" notnull_strength="0" field="FARM" constraints="0"/>
-    <constraint exp_strength="0" unique_strength="0" notnull_strength="0" field="BLOCK" constraints="0"/>
-    <constraint exp_strength="0" unique_strength="0" notnull_strength="0" field="PADDOCK" constraints="0"/>
-    <constraint exp_strength="0" unique_strength="0" notnull_strength="0" field="PID" constraints="0"/>
-    <constraint exp_strength="0" unique_strength="0" notnull_strength="0" field="LANDUSETYP" constraints="0"/>
-    <constraint exp_strength="0" unique_strength="0" notnull_strength="0" field="LINK" constraints="0"/>
-    <constraint exp_strength="0" unique_strength="0" notnull_strength="0" field="PRIORITY" constraints="0"/>
-    <constraint exp_strength="0" unique_strength="0" notnull_strength="0" field="Shape_Length" constraints="0"/>
-    <constraint exp_strength="0" unique_strength="0" notnull_strength="0" field="Shape_Area" constraints="0"/>
+    <constraint notnull_strength="1" constraints="3" field="OBJECTID" exp_strength="0" unique_strength="1"/>
+    <constraint notnull_strength="0" constraints="0" field="REGION" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" constraints="0" field="FARM" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" constraints="0" field="BLOCK" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" constraints="0" field="PADDOCK" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" constraints="0" field="PID" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" constraints="0" field="LANDUSETYP" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" constraints="0" field="LINK" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" constraints="0" field="PRIORITY" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" constraints="0" field="Shape_Length" exp_strength="0" unique_strength="0"/>
+    <constraint notnull_strength="0" constraints="0" field="Shape_Area" exp_strength="0" unique_strength="0"/>
   </constraints>
   <constraintExpressions>
-    <constraint exp="" desc="" field="OBJECTID"/>
-    <constraint exp="" desc="" field="REGION"/>
-    <constraint exp="" desc="" field="FARM"/>
-    <constraint exp="" desc="" field="BLOCK"/>
-    <constraint exp="" desc="" field="PADDOCK"/>
-    <constraint exp="" desc="" field="PID"/>
-    <constraint exp="" desc="" field="LANDUSETYP"/>
-    <constraint exp="" desc="" field="LINK"/>
-    <constraint exp="" desc="" field="PRIORITY"/>
-    <constraint exp="" desc="" field="Shape_Length"/>
-    <constraint exp="" desc="" field="Shape_Area"/>
+    <constraint field="OBJECTID" exp="" desc=""/>
+    <constraint field="REGION" exp="" desc=""/>
+    <constraint field="FARM" exp="" desc=""/>
+    <constraint field="BLOCK" exp="" desc=""/>
+    <constraint field="PADDOCK" exp="" desc=""/>
+    <constraint field="PID" exp="" desc=""/>
+    <constraint field="LANDUSETYP" exp="" desc=""/>
+    <constraint field="LINK" exp="" desc=""/>
+    <constraint field="PRIORITY" exp="" desc=""/>
+    <constraint field="Shape_Length" exp="" desc=""/>
+    <constraint field="Shape_Area" exp="" desc=""/>
   </constraintExpressions>
   <expressionfields/>
   <attributeactions>
     <defaultAction key="Canvas" value="{00000000-0000-0000-0000-000000000000}"/>
   </attributeactions>
-  <attributetableconfig actionWidgetStyle="dropDown" sortOrder="0" sortExpression="">
+  <attributetableconfig actionWidgetStyle="dropDown" sortExpression="" sortOrder="0">
     <columns>
-      <column type="field" name="OBJECTID" hidden="0" width="-1"/>
-      <column type="field" name="REGION" hidden="0" width="-1"/>
-      <column type="field" name="FARM" hidden="0" width="-1"/>
-      <column type="field" name="BLOCK" hidden="0" width="-1"/>
-      <column type="field" name="PADDOCK" hidden="0" width="-1"/>
-      <column type="field" name="PID" hidden="0" width="-1"/>
-      <column type="field" name="LANDUSETYP" hidden="0" width="-1"/>
-      <column type="field" name="LINK" hidden="0" width="-1"/>
-      <column type="field" name="PRIORITY" hidden="0" width="-1"/>
-      <column type="field" name="Shape_Length" hidden="0" width="-1"/>
-      <column type="field" name="Shape_Area" hidden="0" width="-1"/>
-      <column type="actions" hidden="1" width="-1"/>
+      <column hidden="0" width="-1" type="field" name="OBJECTID"/>
+      <column hidden="0" width="-1" type="field" name="REGION"/>
+      <column hidden="0" width="-1" type="field" name="FARM"/>
+      <column hidden="0" width="-1" type="field" name="BLOCK"/>
+      <column hidden="0" width="-1" type="field" name="PADDOCK"/>
+      <column hidden="0" width="-1" type="field" name="PID"/>
+      <column hidden="0" width="-1" type="field" name="LANDUSETYP"/>
+      <column hidden="0" width="-1" type="field" name="LINK"/>
+      <column hidden="0" width="-1" type="field" name="PRIORITY"/>
+      <column hidden="0" width="-1" type="field" name="Shape_Length"/>
+      <column hidden="0" width="-1" type="field" name="Shape_Area"/>
+      <column hidden="1" width="-1" type="actions"/>
     </columns>
   </attributetableconfig>
   <conditionalstyles>
@@ -598,17 +599,17 @@ def my_form_open(dialog, layer, feature):
   <featformsuppress>0</featformsuppress>
   <editorlayout>generatedlayout</editorlayout>
   <editable>
-    <field name="BLOCK" editable="1"/>
-    <field name="FARM" editable="1"/>
-    <field name="LANDUSETYP" editable="1"/>
-    <field name="LINK" editable="1"/>
-    <field name="OBJECTID" editable="1"/>
-    <field name="PADDOCK" editable="1"/>
-    <field name="PID" editable="1"/>
-    <field name="PRIORITY" editable="1"/>
-    <field name="REGION" editable="1"/>
-    <field name="Shape_Area" editable="1"/>
-    <field name="Shape_Length" editable="1"/>
+    <field editable="1" name="BLOCK"/>
+    <field editable="1" name="FARM"/>
+    <field editable="1" name="LANDUSETYP"/>
+    <field editable="1" name="LINK"/>
+    <field editable="1" name="OBJECTID"/>
+    <field editable="1" name="PADDOCK"/>
+    <field editable="1" name="PID"/>
+    <field editable="1" name="PRIORITY"/>
+    <field editable="1" name="REGION"/>
+    <field editable="1" name="Shape_Area"/>
+    <field editable="1" name="Shape_Length"/>
   </editable>
   <labelOnTop>
     <field labelOnTop="0" name="BLOCK"/>

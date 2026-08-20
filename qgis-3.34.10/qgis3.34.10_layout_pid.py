@@ -36,7 +36,6 @@ from qgis.PyQt.QtGui import (
 )
 
 import geopandas as gpd
-import pandas
 from datetime import date, datetime
 import os
 from osgeo import ogr
@@ -45,6 +44,7 @@ import yaml
 import math
 from pathlib import Path
 import sys
+import glob
 
 # Allow importing local helpers from the repository root
 project_root = Path(__file__).resolve().parents[1]
@@ -63,6 +63,7 @@ logo_path           = cfg['logo']
 north_arrow         = cfg['north_arrow']
 qgis_apps           = cfg['qgis_apps']
 qml_dir             = cfg['qml_dir']
+bin_dir             = cfg['bin_dir']
 dam_c1_path        = cfg['dam_c1_path']
 c1                  = cfg['companies_alias']['c1']
 c2                  = cfg['companies_alias']['c2']
@@ -71,8 +72,7 @@ c2                  = cfg['companies_alias']['c2']
 
 today = date.today()
 run_day = today.strftime("%d %B %Y")
-
-pid_run = ['RGN1-2-G-009']
+run_day_ymd = today.strftime("%Y%m%d")
 
 def run_single_company(companies_select, pid) -> None:
 
@@ -128,7 +128,7 @@ def run_single_company(companies_select, pid) -> None:
             "ogr"
         )
         uplantedPaddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
-        uplantedPaddock_layer.setSubsetString('\"LANDUSETYP\" = \'CU\' AND "PID" = \'RGN1-2-G-009\'') # Filter only CP
+        uplantedPaddock_layer.setSubsetString(f'"LANDUSETYP" = \'CU\' AND "PID" = \'{pid}\'')
 
         # Paddock Toponomi Layer
         paddockToponimi_layer = QgsVectorLayer(
@@ -299,7 +299,7 @@ def run_single_company(companies_select, pid) -> None:
         uplantedPaddock_layer.loadNamedStyle(uplantedPaddock_layer_style)
         QgsProject.instance().addMapLayer(uplantedPaddock_layer)
         ## Paddock
-        paddock_layer_style_path = os.path.join(qml_dir, "paddockStyle.qml")
+        paddock_layer_style_path = os.path.join(qml_dir, "pidLevelPaddockStyle.qml")
         paddock_layer.loadNamedStyle(paddock_layer_style_path)
         QgsProject.instance().addMapLayer(paddock_layer)
         ## Farm
@@ -402,7 +402,7 @@ def run_single_company(companies_select, pid) -> None:
 
                     categories = [
                         cat for cat in renderer.categories()
-                        if cat.value() not in ("CP", "", None)
+                        if cat.value() not in ("", None)
                     ]
 
                     layer_clone.layer().setRenderer(
@@ -1030,10 +1030,15 @@ def run_single_company(companies_select, pid) -> None:
 
     exporter = QgsLayoutExporter(layout)
    
+    # ── Create directory first ───────────────────────────────────────────────────
+    output_dir = os.path.join(map_path, run_day_ymd)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # ── Then build the full file path ────────────────────────────────────────────
     if companies_select == c1:
-        output_pdf = os.path.join(map_path + f"{pid}_Gap Detection Map_{run_day}.pdf")
+        output_pdf = os.path.join(output_dir, f"{pid}_Gap Detection Map_{run_day}.pdf")
     elif companies_select == c2:
-        output_pdf = os.path.join(map_path + f"{pid}_Gap Detection Map_{run_day}.pdf")
+        output_pdf = os.path.join(output_dir, f"{pid}_Gap Detection Map_{run_day}.pdf")
 
     result = exporter.exportToPdf(
         output_pdf,
@@ -1057,6 +1062,15 @@ def main():
     app.initQgis()
     try:
         for companies_select in companies_run:
+            target_bin = os.path.join(bin_dir + f'{companies_select}/{run_day_ymd}/')
+            print('target_bin:', target_bin) 
+            parquet_file = glob.glob(os.path.join(target_bin, 'Gap-Detection_*.parquet'))[0]
+            # Load via QGIS then convert
+            layer = QgsVectorLayer(parquet_file, 'Gap-Detection', 'ogr')
+            # Export to memory then read with geopandas
+            gapAR_result = gpd.read_file(layer.source())
+            pid_run = list(set(gapAR_result['pid']))
+            print('pid_run:', pid_run)
             for pid in pid_run:    
                 print(f"Running for company: {companies_select}")
                 run_single_company(companies_select, pid)
