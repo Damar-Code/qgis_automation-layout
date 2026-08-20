@@ -146,13 +146,14 @@
   </elevation>
   <renderer-v2 forceraster="0" symbollevels="0" type="categorizedSymbol" enableorderby="0" attr="LANDUSETYP" referencescale="-1">
     <categories>
-      <category render="true" uuid="{c8d34e2f-2462-4444-aee4-6860f14193bf}" type="string" symbol="0" label="CP" value="CP"/>
-      <category render="true" uuid="{907f814b-d5f5-44e8-9ae5-cad7af4086a5}" type="string" symbol="1" label="CU" value="CU"/>
-      <category render="true" uuid="{5484e39b-df00-41d4-8310-a96829d81d17}" type="string" symbol="2" label="IF" value="IF"/>
-      <category render="true" uuid="{472cd562-0772-41bc-8222-56ed687747e7}" type="string" symbol="3" label="LS" value="LS"/>
-      <category render="true" uuid="{dfae722e-8fcb-498d-bccf-f212cf8beb9b}" type="string" symbol="4" label="RD" value="RD"/>
-      <category render="true" uuid="{0fee1029-f8f4-4d3c-81aa-4d9d15ae8529}" type="string" symbol="5" label="SA" value="SA"/>
-      <category render="true" uuid="{6f7d9a9b-f2b1-4cda-b31e-49070f85903a}" type="string" symbol="6" label="WB" value="WB"/>
+      <category render="true" uuid="{c8d34e2f-2462-4444-aee4-6860f14193bf}" type="string" symbol="0" label="Current Planted" value="CP"/>
+      <category render="true" uuid="{907f814b-d5f5-44e8-9ae5-cad7af4086a5}" type="string" symbol="1" label="Current Unplanted" value="CU"/>
+      <category render="true" uuid="{5484e39b-df00-41d4-8310-a96829d81d17}" type="string" symbol="2" label="Infrastructure" value="IF"/>
+      <category render="true" uuid="{472cd562-0772-41bc-8222-56ed687747e7}" type="string" symbol="3" label="Long Storage" value="LS"/>
+      <category render="true" uuid="{dfae722e-8fcb-498d-bccf-f212cf8beb9b}" type="string" symbol="4" label="Road" value="RD"/>
+      <category render="true" uuid="{0fee1029-f8f4-4d3c-81aa-4d9d15ae8529}" type="string" symbol="5" label="Sacred Area" value="SA"/>
+      <category render="true" uuid="{6f7d9a9b-f2b1-4cda-b31e-49070f85903a}" type="string" symbol="6" label="Water Body" value="WB"/>
+      <category render="false" uuid="{5c7aed40-4475-4504-9329-cadbd5f11793}" type="string" symbol="7" label="" value=""/>
     </categories>
     <symbols>
       <symbol frame_rate="10" is_animated="0" type="fill" name="0" clip_to_extent="1" alpha="1" force_rhr="0">
@@ -166,7 +167,7 @@
         <layer class="SimpleFill" enabled="1" locked="0" pass="0" id="{d9d95d44-e4f0-412f-a9cf-a3f0ed2a8961}">
           <Option type="Map">
             <Option type="QString" name="border_width_map_unit_scale" value="3x:0,0,0,0,0,0"/>
-            <Option type="QString" name="color" value="226,226,226,255"/>
+            <Option type="QString" name="color" value="209,220,179,255"/>
             <Option type="QString" name="joinstyle" value="bevel"/>
             <Option type="QString" name="offset" value="0,0"/>
             <Option type="QString" name="offset_map_unit_scale" value="3x:0,0,0,0,0,0"/>
@@ -234,7 +235,7 @@
             <Option type="QString" name="offset_map_unit_scale" value="3x:0,0,0,0,0,0"/>
             <Option type="QString" name="offset_unit" value="MM"/>
             <Option type="QString" name="outline_color" value="255,235,175,255"/>
-            <Option type="QString" name="outline_style" value="no"/>
+            <Option type="QString" name="outline_style" value="solid"/>
             <Option type="QString" name="outline_width" value="0.26"/>
             <Option type="QString" name="outline_width_unit" value="MM"/>
             <Option type="QString" name="style" value="solid"/>
@@ -253,7 +254,7 @@
             <Option type="QString" name="clip_mode" value="during_render"/>
             <Option type="QString" name="color" value="55,126,184,255"/>
             <Option type="QString" name="coordinate_reference" value="feature"/>
-            <Option type="QString" name="distance" value="0.3"/>
+            <Option type="QString" name="distance" value="2"/>
             <Option type="QString" name="distance_map_unit_scale" value="3x:0,0,0,0,0,0"/>
             <Option type="QString" name="distance_unit" value="MM"/>
             <Option type="QString" name="line_width" value="0.26"/>
@@ -294,7 +295,7 @@
                 <Option type="QString" name="joinstyle" value="bevel"/>
                 <Option type="QString" name="line_color" value="255,170,0,255"/>
                 <Option type="QString" name="line_style" value="solid"/>
-                <Option type="QString" name="line_width" value="0.02"/>
+                <Option type="QString" name="line_width" value="0.8"/>
                 <Option type="QString" name="line_width_unit" value="MM"/>
                 <Option type="QString" name="offset" value="0"/>
                 <Option type="QString" name="offset_map_unit_scale" value="3x:0,0,0,0,0,0"/>
@@ -338,7 +339,7 @@
             <Option type="QString" name="offset_map_unit_scale" value="3x:0,0,0,0,0,0"/>
             <Option type="QString" name="offset_unit" value="MM"/>
             <Option type="QString" name="outline_color" value="35,35,35,255"/>
-            <Option type="QString" name="outline_style" value="no"/>
+            <Option type="QString" name="outline_style" value="solid"/>
             <Option type="QString" name="outline_width" value="0.26"/>
             <Option type="QString" name="outline_width_unit" value="MM"/>
             <Option type="QString" name="style" value="solid"/>
@@ -369,7 +370,7 @@
             <Option type="QString" name="offset_map_unit_scale" value="3x:0,0,0,0,0,0"/>
             <Option type="QString" name="offset_unit" value="MM"/>
             <Option type="QString" name="outline_color" value="0,0,0,255"/>
-            <Option type="QString" name="outline_style" value="no"/>
+            <Option type="QString" name="outline_style" value="solid"/>
             <Option type="QString" name="outline_width" value="0.26"/>
             <Option type="QString" name="outline_width_unit" value="MM"/>
             <Option type="QString" name="style" value="solid"/>
@@ -400,8 +401,8 @@
             <Option type="QString" name="offset_map_unit_scale" value="3x:0,0,0,0,0,0"/>
             <Option type="QString" name="offset_unit" value="MM"/>
             <Option type="QString" name="outline_color" value="35,35,35,255"/>
-            <Option type="QString" name="outline_style" value="no"/>
-            <Option type="QString" name="outline_width" value="0.05"/>
+            <Option type="QString" name="outline_style" value="solid"/>
+            <Option type="QString" name="outline_width" value="0.26"/>
             <Option type="QString" name="outline_width_unit" value="MM"/>
             <Option type="QString" name="style" value="solid"/>
           </Option>
@@ -431,7 +432,38 @@
             <Option type="QString" name="offset_map_unit_scale" value="3x:0,0,0,0,0,0"/>
             <Option type="QString" name="offset_unit" value="MM"/>
             <Option type="QString" name="outline_color" value="190,231,255,255"/>
-            <Option type="QString" name="outline_style" value="no"/>
+            <Option type="QString" name="outline_style" value="solid"/>
+            <Option type="QString" name="outline_width" value="0.26"/>
+            <Option type="QString" name="outline_width_unit" value="MM"/>
+            <Option type="QString" name="style" value="solid"/>
+          </Option>
+          <data_defined_properties>
+            <Option type="Map">
+              <Option type="QString" name="name" value=""/>
+              <Option name="properties"/>
+              <Option type="QString" name="type" value="collection"/>
+            </Option>
+          </data_defined_properties>
+        </layer>
+      </symbol>
+      <symbol frame_rate="10" is_animated="0" type="fill" name="7" clip_to_extent="1" alpha="1" force_rhr="0">
+        <data_defined_properties>
+          <Option type="Map">
+            <Option type="QString" name="name" value=""/>
+            <Option name="properties"/>
+            <Option type="QString" name="type" value="collection"/>
+          </Option>
+        </data_defined_properties>
+        <layer class="SimpleFill" enabled="1" locked="0" pass="0" id="{d9d95d44-e4f0-412f-a9cf-a3f0ed2a8961}">
+          <Option type="Map">
+            <Option type="QString" name="border_width_map_unit_scale" value="3x:0,0,0,0,0,0"/>
+            <Option type="QString" name="color" value="213,85,181,255"/>
+            <Option type="QString" name="joinstyle" value="bevel"/>
+            <Option type="QString" name="offset" value="0,0"/>
+            <Option type="QString" name="offset_map_unit_scale" value="3x:0,0,0,0,0,0"/>
+            <Option type="QString" name="offset_unit" value="MM"/>
+            <Option type="QString" name="outline_color" value="35,35,35,255"/>
+            <Option type="QString" name="outline_style" value="solid"/>
             <Option type="QString" name="outline_width" value="0.26"/>
             <Option type="QString" name="outline_width_unit" value="MM"/>
             <Option type="QString" name="style" value="solid"/>

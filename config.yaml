@@ -6,8 +6,8 @@ crs: EPSG:32754
 
 # ── Run Configuration ───
 companies_run:
-  - GPA
-  # - MNM
+  # - GPA
+  - MNM
 
 # ── Companies Alias ───
 companies_alias:
@@ -19,6 +19,7 @@ qml_dir       : G:/TEAM SHARE/Working Directory/Damar/github/qgis_automation-lay
 logo          : D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/input/logo/comp_logo.jpg
 north_arrow   : D:/00. Geo-AI Apps/automation of gap and weed detection/lib/pyqgis/input/svg/NorthArrow_11.svg
 dam_gpa_path  : D:/00. Geo-AI Apps/automation of gap and weed detection/database/GPA/infra/DAM.shp
+bin_dir       : D:/00. Geo-AI Apps/automation of gap and weed detection/bin/
 
 # ── Companies-specific configuration ───
 companies:
@@ -28,6 +29,7 @@ companies:
     gdb_path            : D:/00. Geo-AI Apps/automation of gap and weed detection/database/GPA/GPA.gdb
     sugarcane_gdb_path  : D:/00. Geo-AI Apps/automation of gap and weed detection/database/GPA/Sugarcane-Raw_GPA_PT.gpkg
     gpkg_gaps_path      : D:/00. Geo-AI Apps/automation of gap and weed detection/database/GPA/Gaps-Detection_GPA_AR.gpkg
+    gpkg_gaps_planting_path : D:/00. Geo-AI Apps/automation of gap and weed detection/database/GPA/Gaps-Detection_GPA_Planting_AR.gpkg
     map_index_extent    : 
       - 436555.000 # xmin
       - 9076954.533 # ymin
@@ -39,6 +41,7 @@ companies:
     gdb_path            : D:/00. Geo-AI Apps/automation of gap and weed detection/database/MNM/MNM.gdb
     sugarcane_gdb_path  : D:/00. Geo-AI Apps/automation of gap and weed detection/database/MNM/Sugarcane-Raw_MNM_PT.gpkg
     gpkg_gaps_path      : D:/00. Geo-AI Apps/automation of gap and weed detection/database/MNM/Gaps-Detection_MNM_AR.gpkg
+    gpkg_gaps_planting_path : D:/00. Geo-AI Apps/automation of gap and weed detection/database/MNM/Gaps-Detection_MNM_Planting_AR.gpkg
     map_index_extent    : 
       - 444063.005 # xmin
       - 9119777.967 # ymin

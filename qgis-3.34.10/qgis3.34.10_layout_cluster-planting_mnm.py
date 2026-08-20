@@ -1,0 +1,772 @@
+from qgis.core import ( 
+    QgsApplication, 
+    QgsProject, 
+    QgsPrintLayout, 
+    QgsLayoutItemMap,
+    QgsLayoutExporter, 
+    QgsUnitTypes, 
+    QgsVectorLayer, 
+    QgsLayoutSize, 
+    QgsCoordinateReferenceSystem, 
+    QgsRasterLayer, 
+    QgsLayoutItemShape,
+    QgsLayoutPoint,
+    QgsSimpleFillSymbolLayer, 
+    QgsFillSymbol,
+    QgsTextFormat,
+    QgsLayoutItemLabel, 
+    QgsLayoutItemPicture, 
+    QgsLayoutItemScaleBar,
+    QgsRectangle,
+    QgsLayoutMeasurement,
+    QgsLayerTreeLayer,
+    QgsCategorizedSymbolRenderer,
+    QgsSingleSymbolRenderer,
+    QgsLayoutItemLegend,
+    QgsLegendStyle,
+    QgsScaleBarSettings,
+    )
+
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QColor, QFont
+
+import geopandas as gpd
+from datetime import date, datetime
+import os
+from osgeo import ogr
+import fiona
+import yaml
+import math
+from pathlib import Path
+import sys
+import glob
+
+project_root = Path(__file__).resolve().parents[1]
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
+
+from lib.summary_statistics import get_gap_summary_statistics
+
+# ── CONFIGURATION ─────────────────────────────────────────────────────────────
+configuration_variable_path = os.path.join(project_root, 'config.yaml')
+with open(configuration_variable_path, 'r', encoding='utf-8') as f:
+    cfg = yaml.safe_load(f)
+
+companies_run   = cfg['companies_run']
+logo_path       = cfg['logo']
+north_arrow     = cfg['north_arrow']
+qgis_apps       = cfg['qgis_apps']
+qml_dir         = cfg['qml_dir']
+bin_dir         = cfg['bin_dir']
+dam_gpa_path    = cfg['dam_gpa_path']
+c1              = cfg['companies_alias']['c1']
+c2              = cfg['companies_alias']['c2']
+
+today       = date.today()
+run_day     = today.strftime("%d %B %Y")
+run_day_ymd = today.strftime("%Y%m%d")
+
+
+def run_single_company(companies_select, cluster_planting) -> None:
+
+    map_title       = cfg['companies'][companies_select]['map_title']
+    map_path        = cfg['companies'][companies_select]['map_path']
+    gdb_path        = cfg['companies'][companies_select]['gdb_path']
+    gpkg_gaps_path  = cfg['companies'][companies_select]['gpkg_gaps_planting_path']
+    mapIndex_xmin   = cfg['companies'][companies_select]['map_index_extent'][0]
+    mapIndex_ymin   = cfg['companies'][companies_select]['map_index_extent'][1]
+    mapIndex_xmax   = cfg['companies'][companies_select]['map_index_extent'][2]
+    mapIndex_ymax   = cfg['companies'][companies_select]['map_index_extent'][3]
+
+    # ── Extract pid from cluster_planting (e.g. 'JAGF-2-G-005_Q232_20260513') ─
+    pid = cluster_planting.split('_')[0]
+
+    project = QgsProject.instance()
+    project.clear()
+    project = QgsProject.instance()
+    project.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+    # ── Gap Database ──────────────────────────────────────────────────────────
+    fiona_latest_gap = fiona.listlayers(gpkg_gaps_path)[-1]
+    gap_layer = QgsVectorLayer(
+        f"{gpkg_gaps_path}|layername={fiona_latest_gap}",
+        "Gap Detection",
+        "ogr"
+    )
+    gap_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+    gap_layer.setSubsetString(f"\"cluster_planting\" = '{cluster_planting}'")  # ← filter by cluster_planting
+
+    # ── ADJUST LAYOUT BASED ON COMPANY ───────────────────────────────────────
+    uplantedPaddock_layer = None
+    if companies_select == c1:
+
+        paddock_layer = QgsVectorLayer(f"{gdb_path}|layername=paddock", "Landuse Types", "ogr")
+        paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+        uplantedPaddock_layer = QgsVectorLayer(f"{gdb_path}|layername=paddock", "Current Unplanted", "ogr")
+        uplantedPaddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+        uplantedPaddock_layer.setSubsetString(f'"LANDUSETYP" = \'CU\' AND "PID" = \'{pid}\'')
+
+        paddockToponimi_layer = QgsVectorLayer(f"{gdb_path}|layername=paddock", "Paddock Toponimi", "ogr")
+        paddockToponimi_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+        paddockToponimi_layer.setSubsetString("\"LANDUSETYP\" = 'CP'")
+
+        farm_layer = QgsVectorLayer(f"{gdb_path}|layername=Farm", "Farm Boundary", "ogr")
+        farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+        paddockIndex_layer = QgsVectorLayer(f"{gdb_path}|layername=paddock", "Paddock", "ogr")
+        paddockIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+        farmIndex_layer = QgsVectorLayer(f"{gdb_path}|layername=Farm", "Farm", "ogr")
+        farmIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+        gdb_paddock      = gpd.read_file(gdb_path, layer='paddock')
+        gdb_paddock_pid  = gdb_paddock[gdb_paddock['PID'] == pid]
+        gdb_paddock_pid["Area_Ha"] = gdb_paddock_pid["Shape_Area"] / 10000
+        paddock_cp       = gdb_paddock_pid[gdb_paddock_pid['LANDUSETYP'] == 'CP']
+        paddock_cu       = gdb_paddock_pid[gdb_paddock_pid['LANDUSETYP'] == 'CU']
+
+    elif companies_select == c2:
+
+        paddock_layer = QgsVectorLayer(f"{gdb_path}|layername=Paddock", "Landuse Types", "ogr")
+        paddock_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+        paddockToponimi_layer = QgsVectorLayer(f"{gdb_path}|layername=planting", "Paddock Toponimi", "ogr")
+        paddockToponimi_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+        farm_layer = QgsVectorLayer(f"{gdb_path}|layername=Farm", "Farm Boundary", "ogr")
+        farm_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+        paddockIndex_layer = QgsVectorLayer(f"{gdb_path}|layername=Paddock", "Paddock", "ogr")
+        paddockIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+        farmIndex_layer = QgsVectorLayer(f"{gdb_path}|layername=Farm", "Farm", "ogr")
+        farmIndex_layer.setCrs(QgsCoordinateReferenceSystem("EPSG:32754"))
+
+        paddock_cp = gpd.read_file(gdb_path, layer='planting')
+        paddock_cp["Area_Ha"] = paddock_cp.area / 10000
+
+    # ── GET VALUES FOR MAIN MAP INFO ──────────────────────────────────────────
+    gapAR_database  = gpd.read_file(gpkg_gaps_path, layer=fiona_latest_gap)
+    gapAR_cluster   = gapAR_database[gapAR_database['cluster_planting'] == cluster_planting]  # ← filter by cluster_planting
+
+    # Gap Ha
+    gapHA              = sum(gapAR_cluster[gapAR_cluster['cls'] == 'gaps spot']['cls_area_ha'])
+    round_gapHA        = round(gapHA, 2)
+    # Growth Plant Ha
+    plantHA            = sum(gapAR_cluster[gapAR_cluster['cls'] == 'plant']['cls_area_ha'])
+    round_plantHA      = round(plantHA, 2)
+    # Percentage Gap
+    total_area         = gapHA + plantHA
+    percentageGAP      = gapHA / total_area * 100 if total_area else 0
+    round_percentageGAP = round(percentageGAP, 2)
+    # Percentage Growth Plant
+    percentagePlant     = plantHA / total_area * 100 if total_area else 0
+    round_percentagePlant = round(percentagePlant, 2)
+    # Photo oldest and newest
+    oldest_date = gapAR_cluster["photo_date"].min().strftime("%d %B %Y")
+    newest_date = gapAR_cluster["photo_date"].max().strftime("%d %B %Y")
+
+    # Next Target
+    if companies_select == c1:
+        round_cuValue      = round(sum(paddock_cu['Area_Ha']), 2)
+        round_cuPercentage = round(
+            sum(paddock_cu['Area_Ha']) / (sum(paddock_cp['Area_Ha']) + sum(paddock_cu['Area_Ha'])) * 100, 2
+        )
+    elif companies_select == c2:
+        round_cuValue      = 0
+        round_cuPercentage = 0
+
+    print('round_cuValue: ',      round_cuValue)
+    print('round_cuPercentage: ', round_cuPercentage)
+
+    # ── LAYOUT MANAGER ────────────────────────────────────────────────────────
+    manager     = project.layoutManager()
+    layout_name = "Automation Map"
+    layout      = QgsPrintLayout(project)
+    layout.initializeDefaults()
+    layout.setName(layout_name)
+    manager.addLayout(layout)
+
+    def frame_style(width):
+        simple_fill = QgsSimpleFillSymbolLayer()
+        fill_symbol = QgsFillSymbol()
+        fill_symbol.changeSymbolLayer(0, simple_fill)
+        simple_fill.setColor(Qt.GlobalColor.white)
+        simple_fill.setStrokeColor(Qt.GlobalColor.black)
+        simple_fill.setStrokeWidth(width)
+        return fill_symbol
+
+    def addFrame(x, y, width, height):
+        legend_frame = QgsLayoutItemShape(layout)
+        legend_frame.setShapeType(QgsLayoutItemShape.Shape.Rectangle)
+        legend_frame.setRect(0, 0, width, height)
+        legend_frame.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
+        layout.addLayoutItem(legend_frame)
+        return legend_frame.setSymbol(frame_style(width=0.3))
+
+    addFrame(215.484, 4.515,  76.785, 200.969)
+    addFrame(215.484, 26.559, 76.785, 19.239)
+    addFrame(215.484, 162.234, 76.785, 33.077)
+
+    def add_mainMap():
+        gap_layer.loadNamedStyle(os.path.join(qml_dir, "gapsAreaStyle_pidLevel.qml"))
+        QgsProject.instance().addMapLayer(gap_layer)
+
+        if uplantedPaddock_layer is not None:
+            uplantedPaddock_layer.loadNamedStyle(os.path.join(qml_dir, "CUStyle.qml"))
+            QgsProject.instance().addMapLayer(uplantedPaddock_layer)
+
+        paddock_layer.loadNamedStyle(os.path.join(qml_dir, "pidLevelPaddockStyle.qml"))
+        QgsProject.instance().addMapLayer(paddock_layer)
+
+        farmMain_layer = farm_layer
+        farmMain_layer.loadNamedStyle(os.path.join(qml_dir, "farmStyle.qml"))
+        QgsProject.instance().addMapLayer(farmMain_layer)
+
+        if companies_select == c1:
+            paddockToponimi_layer.loadNamedStyle(os.path.join(qml_dir, "paddockTonomiStyle.qml"))
+            QgsProject.instance().addMapLayer(paddockToponimi_layer)
+            map_item = QgsLayoutItemMap(layout)
+            map_item.setLayers([farmMain_layer, gap_layer, uplantedPaddock_layer, paddock_layer])
+
+        elif companies_select == c2:
+            paddockToponimi_layer.loadNamedStyle(os.path.join(qml_dir, "paddockTonomiStyle_2.qml"))
+            planting_symbol = QgsFillSymbol.createSimple({
+                "color": "209,220,179,255",
+                "outline_style": "no",
+            })
+            paddockToponimi_layer.setRenderer(QgsSingleSymbolRenderer(planting_symbol))
+            QgsProject.instance().addMapLayer(paddockToponimi_layer)
+            map_item = QgsLayoutItemMap(layout)
+            map_item.setLayers([farmMain_layer, gap_layer, paddockToponimi_layer, paddock_layer])
+
+        map_item.attemptMove(QgsLayoutPoint(4.434, 4.515, QgsUnitTypes.LayoutMillimeters))
+        map_item.attemptResize(QgsLayoutSize(211.058, 200.969, QgsUnitTypes.LayoutMillimeters))
+
+        extent = gap_layer.extent()
+        extent.scale(1.1)
+        map_item.zoomToExtent(extent)
+
+        current_scale = map_item.scale()
+        rounded_scale = math.ceil(current_scale / 1000) * 1000
+        map_item.setScale(rounded_scale)
+
+        map_item.setFrameEnabled(True)
+        map_item.setKeepLayerSet(True)
+        map_item.setKeepLayerStyles(True)
+        layout.addLayoutItem(map_item)
+        map_item.refresh()
+
+        return map_item
+
+    map_item = add_mainMap()
+
+    def addLegend(list_selected_layers):
+        legend = QgsLayoutItemLegend(layout)
+        legend.attemptMove(QgsLayoutPoint(215.916, 69.255, QgsUnitTypes.LayoutMillimeters))
+        legend.attemptResize(QgsLayoutSize(31.936, 50.598, QgsUnitTypes.LayoutMillimeters))
+        legend.setBackgroundEnabled(False)
+        legend.setAutoUpdateModel(False)
+
+        font = QgsTextFormat()
+        font.setForcedBold(True)
+        font.setColor(Qt.GlobalColor.black)
+        font.setSize(7)
+        legend.rstyle(QgsLegendStyle.Subgroup).setTextFormat(font)
+
+        font = QgsTextFormat()
+        font.setForcedBold(False)
+        font.setColor(Qt.GlobalColor.black)
+        font.setSize(7)
+        legend.rstyle(QgsLegendStyle.SymbolLabel).setTextFormat(font)
+
+        legend.setSymbolWidth(4)
+        legend.setSymbolHeight(4)
+
+        root_group        = project.layerTreeRoot()
+        legend_model      = legend.model()
+        root_legend_group = legend_model.rootGroup()
+
+        for child in root_legend_group.children():
+            root_legend_group.removeChildNode(child)
+
+        for child in root_group.children():
+            if isinstance(child, QgsLayerTreeLayer) and child.layer().name() in list_selected_layers:
+                layer_clone = child.clone()
+                if layer_clone.layer().name() == "Landuse Types":
+                    renderer   = layer_clone.layer().renderer()
+                    categories = [cat for cat in renderer.categories() if cat.value() not in ("", None)]
+                    layer_clone.layer().setRenderer(QgsCategorizedSymbolRenderer(renderer.classAttribute(), categories))
+                root_legend_group.addChildNode(layer_clone)
+
+        legend.adjustBoxSize()
+        layout.addLayoutItem(legend)
+
+    addLegend(list_selected_layers=["Farm Boundary", "Landuse Types"])
+
+    def addLegend2(list_selected_layers):
+        legend = QgsLayoutItemLegend(layout)
+        legend.attemptMove(QgsLayoutPoint(216, 60.1, QgsUnitTypes.LayoutMillimeters))
+        legend.attemptResize(QgsLayoutSize(31.936, 50.598, QgsUnitTypes.LayoutMillimeters))
+        legend.setBackgroundEnabled(False)
+        legend.setAutoUpdateModel(False)
+
+        font = QgsTextFormat()
+        font.setForcedBold(True)
+        font.setColor(Qt.GlobalColor.black)
+        font.setSize(7)
+        legend.rstyle(QgsLegendStyle.Subgroup).setTextFormat(font)
+
+        font = QgsTextFormat()
+        font.setForcedBold(False)
+        font.setColor(Qt.GlobalColor.black)
+        font.setSize(7)
+        legend.rstyle(QgsLegendStyle.SymbolLabel).setTextFormat(font)
+
+        legend.setSymbolWidth(4)
+        legend.setSymbolHeight(4)
+
+        root_group        = project.layerTreeRoot()
+        legend_model      = legend.model()
+        root_legend_group = legend_model.rootGroup()
+
+        for child in root_legend_group.children():
+            root_legend_group.removeChildNode(child)
+
+        for child in root_group.children():
+            if isinstance(child, QgsLayerTreeLayer) and child.layer().name() in list_selected_layers:
+                layer_clone = child.clone()
+                if layer_clone.layer().name() == "Landuse Types":
+                    renderer   = layer_clone.layer().renderer()
+                    categories = [cat for cat in renderer.categories() if cat.value() not in ("CP", "", None)]
+                    layer_clone.layer().setRenderer(QgsCategorizedSymbolRenderer(renderer.classAttribute(), categories))
+                root_legend_group.addChildNode(layer_clone)
+
+        legend.adjustBoxSize()
+        layout.addLayoutItem(legend)
+
+    addLegend2(list_selected_layers=["Current Unplanted"])
+
+    def legendTitles():
+        titles = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(titles)
+        titles.setText("LEGEND")
+        titles.setHAlign(Qt.AlignLeft)
+        titles.setVAlign(Qt.AlignTop)
+        titles.attemptResize(QgsLayoutSize(19.916, 3.392, QgsUnitTypes.LayoutMillimeters))
+        titles.attemptMove(QgsLayoutPoint(217.850, 46.948, QgsUnitTypes.LayoutMillimeters))
+        titles_style = QgsTextFormat()
+        titles_style.setColor(Qt.GlobalColor.black)
+        titles_style.setSize(8)
+        titles_style.setForcedBold(True)
+        titles.setTextFormat(titles_style)
+
+        areaHA_title = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(areaHA_title)
+        areaHA_title.setText("Area (Ha)")
+        areaHA_title.setHAlign(Qt.AlignRight)
+        areaHA_title.setVAlign(Qt.AlignTop)
+        areaHA_title.attemptMove(QgsLayoutPoint(261.653, 49.284, QgsUnitTypes.LayoutMillimeters))
+        areaHA_title.attemptResize(QgsLayoutSize(10.546, 4.070, QgsUnitTypes.LayoutMillimeters))
+        areaHA_title_style = QgsTextFormat()
+        areaHA_title_style.setColor(Qt.GlobalColor.black)
+        areaHA_title_style.setSize(6)
+        areaHA_title_style.setForcedBold(True)
+        areaHA_title.setTextFormat(areaHA_title_style)
+
+        percentage_title = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(percentage_title)
+        percentage_title.setText("Percentage (%)")
+        percentage_title.setHAlign(Qt.AlignRight)
+        percentage_title.setVAlign(Qt.AlignTop)
+        percentage_title.attemptMove(QgsLayoutPoint(273.567, 49.284, QgsUnitTypes.LayoutMillimeters))
+        percentage_title.attemptResize(QgsLayoutSize(17.575, 3.686, QgsUnitTypes.LayoutMillimeters))
+        percentage_title.setTextFormat(areaHA_title_style)
+
+        gap_info_style = QgsTextFormat()
+        gap_info_style.setColor(Qt.GlobalColor.black)
+        gap_info_style.setSize(7)
+
+        growth_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(growth_text)
+        growth_text.setText("Growth Plant")
+        growth_text.setHAlign(Qt.AlignLeft)
+        growth_text.setVAlign(Qt.AlignTop)
+        growth_text.setTextFormat(gap_info_style)
+        growth_text.attemptMove(QgsLayoutPoint(223.997, 54.556, QgsUnitTypes.LayoutMillimeters))
+        growth_text.attemptResize(QgsLayoutSize(26.397, 2.882, QgsUnitTypes.LayoutMillimeters))
+
+        gap_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(gap_text)
+        gap_text.setText("Gap")
+        gap_text.setHAlign(Qt.AlignLeft)
+        gap_text.setVAlign(Qt.AlignTop)
+        gap_text.setTextFormat(gap_info_style)
+        gap_text.attemptMove(QgsLayoutPoint(223.997, 60.337, QgsUnitTypes.LayoutMillimeters))
+        gap_text.attemptResize(QgsLayoutSize(18.903, 2.792, QgsUnitTypes.LayoutMillimeters))
+
+        return titles, areaHA_title, percentage_title, gap_text
+
+    legendTitles()
+
+    def legendMainInfoValues():
+        keyStyle = QgsTextFormat()
+        keyStyle.setColor(Qt.GlobalColor.black)
+        keyStyle.setSize(7)
+
+        growthValue_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(growthValue_text)
+        growthValue_text.setText(str(round_plantHA))
+        growthValue_text.setHAlign(Qt.AlignRight)
+        growthValue_text.setVAlign(Qt.AlignTop)
+        growthValue_text.setTextFormat(keyStyle)
+        growthValue_text.attemptMove(QgsLayoutPoint(256.163, 54.540, QgsUnitTypes.LayoutMillimeters))
+        growthValue_text.attemptResize(QgsLayoutSize(16.036, 2.913, QgsUnitTypes.LayoutMillimeters))
+
+        gapValue_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(gapValue_text)
+        gapValue_text.setText(str(round_gapHA))
+        gapValue_text.setHAlign(Qt.AlignRight)
+        gapValue_text.setVAlign(Qt.AlignTop)
+        gapValue_text.setTextFormat(keyStyle)
+        gapValue_text.attemptMove(QgsLayoutPoint(257.537, 60.222, QgsUnitTypes.LayoutMillimeters))
+        gapValue_text.attemptResize(QgsLayoutSize(14.662, 3.074, QgsUnitTypes.LayoutMillimeters))
+
+        growthPercentage_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(growthPercentage_text)
+        growthPercentage_text.setText(str(round_percentagePlant))
+        growthPercentage_text.setHAlign(Qt.AlignRight)
+        growthPercentage_text.setVAlign(Qt.AlignTop)
+        growthPercentage_text.setTextFormat(keyStyle)
+        growthPercentage_text.attemptMove(QgsLayoutPoint(275.834, 54.495, QgsUnitTypes.LayoutMillimeters))
+        growthPercentage_text.attemptResize(QgsLayoutSize(15.308, 2.726, QgsUnitTypes.LayoutMillimeters))
+
+        gapPercentage_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(gapPercentage_text)
+        gapPercentage_text.setText(str(round_percentageGAP))
+        gapPercentage_text.setHAlign(Qt.AlignRight)
+        gapPercentage_text.setVAlign(Qt.AlignTop)
+        gapPercentage_text.setTextFormat(keyStyle)
+        gapPercentage_text.attemptMove(QgsLayoutPoint(282.045, 60.175, QgsUnitTypes.LayoutMillimeters))
+        gapPercentage_text.attemptResize(QgsLayoutSize(9.097, 3.030, QgsUnitTypes.LayoutMillimeters))
+
+
+        return growthValue_text, gapValue_text, gapPercentage_text, growthPercentage_text
+
+    legendMainInfoValues()
+
+    def addLegendRectangle(layout, x, y, width=4, height=4, fill_color="#FF0000", outline=False):
+        outline_color = "#000000" if outline else fill_color
+        rect = QgsLayoutItemShape(layout)
+        rect.setShapeType(QgsLayoutItemShape.Rectangle)
+        rect.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
+        rect.attemptResize(QgsLayoutSize(width, height, QgsUnitTypes.LayoutMillimeters))
+        symbol = QgsFillSymbol.createSimple({
+            "color"        : QColor(fill_color).name(),
+            "outline_color": QColor(outline_color).name(),
+            "outline_width": "0.2",
+        })
+        rect.setSymbol(symbol)
+        layout.addLayoutItem(rect)
+        return rect
+
+    addLegendRectangle(layout, x=218.000, y=53.934, fill_color="#33a02c", outline=False)
+    addLegendRectangle(layout, x=218.000, y=59.809, fill_color="#FF0000", outline=False)
+
+    def mapTitle():
+        main_title = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(main_title)
+        main_title.setText(map_title)
+        main_title.setHAlign(Qt.AlignCenter)
+        main_title.setVAlign(Qt.AlignVCenter)
+        main_title.attemptMove(QgsLayoutPoint(233.448, 6.964, QgsUnitTypes.LayoutMillimeters))
+        main_title.attemptResize(QgsLayoutSize(58.971, 6.406, QgsUnitTypes.LayoutMillimeters))
+        main_title_style = QgsTextFormat()
+        main_title_style.setColor(Qt.GlobalColor.black)
+        main_title_style.setSize(9)
+        main_title_style.setForcedBold(True)
+        main_title.setTextFormat(main_title_style)
+
+        # ── Show cluster_planting as title instead of pid ─────────────────────
+        cluster_title = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(cluster_title)
+        cluster_title.setText(cluster_planting)   # ← cluster_planting as map title
+        cluster_title.setHAlign(Qt.AlignCenter)
+        cluster_title.setVAlign(Qt.AlignVCenter)
+        cluster_title.attemptMove(QgsLayoutPoint(233.448, 12.255, QgsUnitTypes.LayoutMillimeters))
+        cluster_title.attemptResize(QgsLayoutSize(58.880, 4.123, QgsUnitTypes.LayoutMillimeters))
+        cluster_title_style = QgsTextFormat()
+        cluster_title_style.setColor(Qt.GlobalColor.black)
+        cluster_title_style.setSize(8)
+        cluster_title_style.setForcedBold(True)
+        cluster_title.setTextFormat(cluster_title_style)
+
+        sub_title = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(sub_title)
+        sub_title.setText('Gap Detection Map')
+        sub_title.setHAlign(Qt.AlignCenter)
+        sub_title.setVAlign(Qt.AlignVCenter)
+        sub_title.attemptMove(QgsLayoutPoint(233.448, 16.378, QgsUnitTypes.LayoutMillimeters))
+        sub_title.attemptResize(QgsLayoutSize(58.880, 4.341, QgsUnitTypes.LayoutMillimeters))
+        sub_title_style = QgsTextFormat()
+        sub_title_style.setColor(Qt.GlobalColor.black)
+        sub_title_style.setSize(6)
+        sub_title_style.setForcedBold(True)
+        sub_title.setTextFormat(sub_title_style)
+
+        return main_title, cluster_title, sub_title
+
+    mapTitle()
+
+    def mapDate(run_day):
+        main_date = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(main_date)
+        main_date.setText(f"As of {run_day}")
+        main_date.setHAlign(Qt.AlignCenter)
+        main_date.setVAlign(Qt.AlignVCenter)
+        main_date.attemptMove(QgsLayoutPoint(233.184, 20.072, QgsUnitTypes.LayoutMillimeters))
+        main_date.attemptResize(QgsLayoutSize(58.970, 4.885, QgsUnitTypes.LayoutMillimeters))
+        main_date_style = QgsTextFormat()
+        main_date_style.setColor(Qt.GlobalColor.black)
+        main_date_style.setSize(6)
+        main_date.setTextFormat(main_date_style)
+        return main_date
+
+    mapDate(run_day)
+
+    def mapLogo(logo_path):
+        main_logo = QgsLayoutItemPicture(layout)
+        main_logo.setPicturePath(logo_path)
+        main_logo.attemptResize(QgsLayoutSize(17.020, 17.889, QgsUnitTypes.LayoutMillimeters))
+        main_logo.attemptMove(QgsLayoutPoint(217.850, 7.425))
+        layout.addLayoutItem(main_logo)
+
+    mapLogo(logo_path)
+
+    def scaleBar():
+        scalebar_item = QgsLayoutItemScaleBar(layout)
+        scalebar_item.setLinkedMap(map_item)
+        scalebar_item.setStyle('Single Box')
+        scalebar_item.setUnits(QgsUnitTypes.DistanceMeters)
+        scalebar_item.setSegmentSizeMode(QgsScaleBarSettings.SegmentSizeFitWidth)
+        scalebar_item.setNumberOfSegments(2)
+        scalebar_item.setMinimumBarWidth(28)
+        scalebar_item.setMaximumBarWidth(30)
+        scalebar_item.setHeight(0.7)
+        scalebar_item.setLabelVerticalPlacement(QgsScaleBarSettings.LabelBelowSegment)
+        text_format = QgsTextFormat()
+        font = QFont('MS Shell Dlg 2', 3)
+        text_format.setFont(font)
+        text_format.setSize(3)
+        scalebar_item.setTextFormat(text_format)
+        scalebar_item.setLabelBarSpace(0.5)
+        scalebar_item.setUnitLabel('m')
+        scalebar_item.attemptResize(QgsLayoutSize(33.902, 5.467, QgsUnitTypes.LayoutMillimeters))
+        scalebar_item.attemptMove(QgsLayoutPoint(227.567, 31.360))
+        layout.addLayoutItem(scalebar_item)
+
+    scaleBar()
+
+    def mapCoordinateInfo():
+        def coord_text_format():
+            text_format = QgsTextFormat()
+            font = QFont('MS Shell Dlg 2', 5)
+            text_format.setFont(font)
+            text_format.setSize(5)
+            return text_format
+
+        coord_attributes = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(coord_attributes)
+        coord_attributes.setText("Grid System \nProjection \nDatum \nZone")
+        coord_attributes.setHAlign(Qt.AlignLeft)
+        coord_attributes.setVAlign(Qt.AlignTop)
+        coord_attributes.attemptResize(QgsLayoutSize(15.838, 8.305, QgsUnitTypes.LayoutMillimeters))
+        coord_attributes.attemptMove(QgsLayoutPoint(228.946, 36.179, QgsUnitTypes.LayoutMillimeters))
+        coord_attributes.setTextFormat(coord_text_format())
+
+        coord_values = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(coord_values)
+        coord_values.setText(": Grid Geografis \n: UTM \n: WGS 84 \n: 54 S")
+        coord_values.setHAlign(Qt.AlignLeft)
+        coord_values.setVAlign(Qt.AlignTop)
+        coord_values.attemptResize(QgsLayoutSize(15.838, 8.305, QgsUnitTypes.LayoutMillimeters))
+        coord_values.attemptMove(QgsLayoutPoint(245.050, 36.232, QgsUnitTypes.LayoutMillimeters))
+        coord_values.setTextFormat(coord_text_format())
+
+        return coord_attributes, coord_values
+
+    mapCoordinateInfo()
+
+    def scaleNumeric():
+        def coord_text_format():
+            text_format = QgsTextFormat()
+            font = QFont('MS Shell Dlg 2', 5)
+            text_format.setFont(font)
+            text_format.setSize(5)
+            return text_format
+
+        scale_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(scale_text)
+        scale_text.setText("SCALE")
+        scale_text.setHAlign(Qt.AlignLeft)
+        scale_text.setVAlign(Qt.AlignTop)
+        scale_text.attemptResize(QgsLayoutSize(5.394, 28.717, QgsUnitTypes.LayoutMillimeters))
+        scale_text.attemptMove(QgsLayoutPoint(228.946, 28.717, QgsUnitTypes.LayoutMillimeters))
+        scale_text.setTextFormat(coord_text_format())
+
+        numericscale_item = QgsLayoutItemScaleBar(layout)
+        numericscale_item.setLinkedMap(map_item)
+        numericscale_item.setStyle('Numeric')
+        numericscale_item.attemptResize(QgsLayoutSize(14.989, 4.020, QgsUnitTypes.LayoutMillimeters))
+        numericscale_item.attemptMove(QgsLayoutPoint(235.405, 27.780, QgsUnitTypes.LayoutMillimeters))
+        numericscale_item.setTextFormat(coord_text_format())
+        layout.addLayoutItem(numericscale_item)
+
+        return scale_text
+
+    scaleNumeric()
+
+    def addLine(layout, x, y, length, orientation="horizontal", thickness=0.2, color=QColor(0, 0, 0)):
+        line = QgsLayoutItemShape(layout)
+        line.setShapeType(QgsLayoutItemShape.Rectangle)
+        line.attemptMove(QgsLayoutPoint(x, y, QgsUnitTypes.LayoutMillimeters))
+        width  = thickness if orientation.lower() == "vertical" else length
+        height = length    if orientation.lower() == "vertical" else thickness
+        line.attemptResize(QgsLayoutSize(width, height, QgsUnitTypes.LayoutMillimeters))
+        symbol = QgsFillSymbol.createSimple({"color": color.name(), "outline_style": "no"})
+        line.setSymbol(symbol)
+        layout.addLayoutItem(line)
+        return line
+
+    addLine(layout=layout, x=262.993, y=26.559,  length=19.3,  orientation="vertical")
+    addLine(layout=layout, x=218,     y=58.888,  length=74.269, orientation="horizontal")
+    addLine(layout=layout, x=218,     y=64.545,  length=74.269, orientation="horizontal")
+    addLine(layout=layout, x=255.245, y=54.079,  length=10.5,  orientation="vertical")
+    addLine(layout=layout, x=273.166, y=53.934,  length=10.5, orientation="vertical")
+
+    def northArrow():
+        picture_item = QgsLayoutItemPicture(layout)
+        picture_item.setPicturePath(north_arrow)
+        picture_item.attemptResize(QgsLayoutSize(8.319, 11.864, QgsUnitTypes.LayoutMillimeters))
+        picture_item.attemptMove(QgsLayoutPoint(217.643, 33.537))
+        layout.addLayoutItem(picture_item)
+
+        north_text = QgsLayoutItemLabel(layout)
+        layout.addLayoutItem(north_text)
+        north_text.setText("N")
+        north_text.setHAlign(Qt.AlignLeft)
+        north_text.setVAlign(Qt.AlignTop)
+        north_text.attemptResize(QgsLayoutSize(2.953, 4.102, QgsUnitTypes.LayoutMillimeters))
+        north_text.attemptMove(QgsLayoutPoint(220.528, 28.137, QgsUnitTypes.LayoutMillimeters))
+        north_text_style = QgsTextFormat()
+        north_text_style.setColor(Qt.GlobalColor.black)
+        north_text_style.setSize(10)
+        north_text_style.setForcedBold(True)
+        north_text.setTextFormat(north_text_style)
+
+        return picture_item, north_text
+
+    northArrow()
+
+    def add_mapSource(layout, run_day, oldest_date, newest_date):
+        mapSource = QgsLayoutItemLabel(layout)
+        mapSource.setHAlign(Qt.AlignLeft)
+        mapSource.setVAlign(Qt.AlignTop)
+        mapSource_style = QgsTextFormat()
+        mapSource_style.setColor(Qt.GlobalColor.black)
+        mapSource_style.setSize(5)
+        mapSource.setText(
+            f'SOURCE :\n'
+            f'1. Gap detection analysis {run_day}\n'
+            f'2. Aerial photo from {oldest_date} to {newest_date}'
+        )
+        mapSource.setTextFormat(mapSource_style)
+        mapSource.adjustSizeToText()
+        mapSource.setMarginX(3)
+        mapSource.attemptMove(QgsLayoutPoint(217.850, 197.276, QgsUnitTypes.LayoutMillimeters))
+        mapSource.attemptResize(QgsLayoutSize(73.082, 6.823, QgsUnitTypes.LayoutMillimeters))
+        layout.addLayoutItem(mapSource)
+
+    add_mapSource(layout, run_day, oldest_date, newest_date)
+
+    def add_mapIndex(farmIndex_layer, gap_layer, paddockIndex_layer, layout, companies_select):
+        map2 = QgsLayoutItemMap(layout)
+        map2.setRect(10, 10, 10, 10)
+        map2.setCrs(QgsCoordinateReferenceSystem('EPSG:32754'))
+
+        urlWithParams = 'type=xyz&url=https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+        EsriSat = QgsRasterLayer(urlWithParams, 'OpenStreetMap', 'wms')
+
+        if EsriSat.isValid():
+            QgsProject.instance().addMapLayer(EsriSat)
+        else:
+            print('invalid layer')
+
+        farmIndex_layer.loadNamedStyle(os.path.join(qml_dir, "farmIndexStyle.qml"))
+        QgsProject.instance().addMapLayer(farmIndex_layer)
+
+        gap_layer.loadNamedStyle(os.path.join(qml_dir, "gapsAreaStyle_pidLevel.qml"))
+        QgsProject.instance().addMapLayer(gap_layer)
+
+        paddockIndex_layer.loadNamedStyle(os.path.join(qml_dir, "paddockIndexStyle.qml"))
+        QgsProject.instance().addMapLayer(paddockIndex_layer)
+
+        map2.setLayers([farmIndex_layer, gap_layer, paddockIndex_layer, EsriSat])
+        map2.setExtent(QgsRectangle(mapIndex_xmin, mapIndex_ymin, mapIndex_xmax, mapIndex_ymax))
+        map2.setFrameEnabled(True)
+        map2.setFrameStrokeWidth(QgsLayoutMeasurement(0.1, QgsUnitTypes.LayoutMillimeters))
+        map2.attemptMove(QgsLayoutPoint(230.549, 166.780, QgsUnitTypes.LayoutMillimeters))
+        map2.attemptResize(QgsLayoutSize(44.840, 23.984, QgsUnitTypes.LayoutMillimeters))
+
+        return layout.addLayoutItem(map2)
+
+    add_mapIndex(farmIndex_layer, gap_layer, paddockIndex_layer, layout, companies_select)
+
+    exporter  = QgsLayoutExporter(layout)
+    output_dir = os.path.join(map_path, run_day_ymd)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # ── Output filename uses cluster_planting ─────────────────────────────────
+    output_pdf = os.path.join(output_dir, f"{cluster_planting}_Gap Detection Map_{run_day}.pdf")
+
+    result = exporter.exportToPdf(output_pdf, QgsLayoutExporter.PdfExportSettings())
+    print("Export result:", result)
+
+    if result == QgsLayoutExporter.Success:
+        print(f"PDF successfully exported: {output_pdf}")
+    else:
+        print("PDF export FAILED")
+
+
+def main():
+    QgsApplication.setPrefixPath(qgis_apps, True)
+    app = QgsApplication([], False)
+    app.initQgis()
+    try:
+        for companies_select in companies_run:
+            target_bin   = os.path.join(bin_dir, f'{companies_select}/{run_day_ymd}/')
+            print('target_bin:', target_bin)
+            parquet_file = glob.glob(os.path.join(target_bin, 'Gap-Detection_*.parquet'))[0]
+            layer        = QgsVectorLayer(parquet_file, 'Gap-Detection', 'ogr')
+            gapAR_result = gpd.read_file(layer.source())
+
+            # ── Loop by cluster_planting instead of pid ───────────────────────
+            cluster_run  = list(set(gapAR_result['cluster_planting']))
+            print('cluster_run:', cluster_run)
+
+            for cluster_planting in cluster_run:
+                print(f"Running for company: {companies_select} | cluster: {cluster_planting}")
+                try:
+                    run_single_company(companies_select, cluster_planting)
+                except Exception as error:
+                    print(
+                        f"Skipping cluster {cluster_planting} due to error: "
+                        f"{type(error).__name__}: {error}"
+                    )
+    finally:
+        app.exitQgis()
+
+
+if __name__ == "__main__":
+    main()
