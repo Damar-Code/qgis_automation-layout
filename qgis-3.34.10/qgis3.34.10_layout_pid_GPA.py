@@ -35,7 +35,6 @@ from qgis.PyQt.QtGui import (
     QFont,
 )
 
-import pandas as pd
 import geopandas as gpd
 from datetime import date, datetime
 import os
@@ -46,7 +45,6 @@ import math
 from pathlib import Path
 import sys
 import glob
-import traceback
 
 # Allow importing local helpers from the repository root
 project_root = Path(__file__).resolve().parents[1]
@@ -77,12 +75,11 @@ run_day = today.strftime("%d %B %Y")
 run_day_ymd = today.strftime("%Y%m%d")
 
 def run_single_company(companies_select, pid) -> None:
-    print('PID: ', pid)
 
     map_title           = cfg['companies'][companies_select]['map_title']
     map_path            = cfg['companies'][companies_select]['map_path']
     gdb_path            = cfg['companies'][companies_select]['gdb_path']
-    gpkg_gaps_path      = cfg['companies'][companies_select]['gpkg_gaps_planting_path']
+    gpkg_gaps_path      = cfg['companies'][companies_select]['gpkg_gaps_path']
     mapIndex_xmin       = cfg['companies'][companies_select]['map_index_extent'][0]
     mapIndex_ymin       = cfg['companies'][companies_select]['map_index_extent'][1]
     mapIndex_xmax       = cfg['companies'][companies_select]['map_index_extent'][2]
@@ -228,59 +225,28 @@ def run_single_company(companies_select, pid) -> None:
     round_plantHA = round(plantHA, 2)
     # print(round_plantHA)
     # Percentage Gap
-    percentageGAP = (gapHA / (gapHA + plantHA) * 100) if (gapHA + plantHA) > 0 else 0
+    percentageGAP = gapHA/(gapHA + plantHA)*100
     round_percentageGAP = round(percentageGAP, 2)
     # print(round_percentageGAP)
     # Percentage Growth Plant
-    percentagePlant = (plantHA / (gapHA + plantHA) * 100) if (gapHA + plantHA) > 0 else 0
+    percentagePlant = plantHA/(gapHA + plantHA)*100
     round_percentagePlant = round(percentagePlant, 2)
     # print(round_percentagePlant)
     # print(round_percentagePlant+round_percentageGAP)
     # Photo latest and newest
-    # Some records may have mixed date formats like YYYY/MM/DD or YYYY-MM-DD,
-    # or empty/null values. We normalize them before formatting.
-    photo_series = gapAR_pid["photo_date"].astype(str).str.strip()
-    parsed_photo_dates = []
-
-    for value in photo_series:
-        if value in {"", "nan", "NaN", "None", "none", "NULL", "null", "<NA>"}:
-            parsed_photo_dates.append(pd.NaT)
-            continue
-
-        try:
-            parsed_photo_dates.append(pd.to_datetime(value, errors="raise"))
-        except (TypeError, ValueError):
-            try:
-                normalized = value.replace("/", "-")
-                parsed_photo_dates.append(pd.to_datetime(normalized, errors="raise"))
-            except (TypeError, ValueError):
-                parsed_photo_dates.append(pd.NaT)
-
-    photo_dates = pd.Series(parsed_photo_dates)
-    valid_photo_dates = photo_dates.dropna()
-
-    if not valid_photo_dates.empty:
-        oldest_date = valid_photo_dates.min().strftime("%d %B %Y")
-        newest_date = valid_photo_dates.max().strftime("%d %B %Y")
-    else:
-        oldest_date = "N/A"
-        newest_date = "N/A"
-
+    oldest_date = gapAR_pid["photo_date"].min().strftime("%d %B %Y")
+    newest_date = gapAR_pid["photo_date"].max().strftime("%d %B %Y")
     # print(oldest_date)
     # print(newest_date)
 
     # Next Target
-    round_cuValue = 0.0
-    round_cuPercentage = 0.0
-
     if companies_select == c1:
         round_cuValue = round(sum(paddock_cu['Area_Ha']), 2)
         round_cuPercentage = round(sum(paddock_cu['Area_Ha'])/(sum(paddock_cp['Area_Ha'])+sum(paddock_cu['Area_Ha']))*100, 2)
-    elif companies_select == c2:
+    if companies_select == c2:
         print('pass')
         # nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
         # nextTarget = round(sum(paddock_cp['Area_Ha']) - (gapHA + plantHA), 3)
-
     print('round_cuValue: ', round_cuValue)
     print('round_cuPercentage: ', round_cuPercentage)
     # PRODUCE LAYOUTING MANAGER
@@ -363,67 +329,12 @@ def run_single_company(companies_select, pid) -> None:
         map_item.attemptResize(QgsLayoutSize(211.058, 200.969, QgsUnitTypes.LayoutMillimeters))
 
         # IMPORTANT
-        # Some PIDs can produce an empty or invalid layer extent; in that case the
-        # map scale becomes NaN and math.ceil() fails. We fail early with a clear
-        # message so the PID loop can log and continue with a detailed diagnosis.
-        gap_count = gap_layer.featureCount()
-        if gap_count <= 0:
-            debug_msg = (
-                f"PID debug: pid={pid}, company={companies_select}, "
-                f"gap_layer_name={gap_layer.name()}, gap_layer_count={gap_count}, "
-                f"selected_layer={fiona_latest_gap}, filter='pid = {pid}'"
-            )
-            raise ValueError(f"PID {pid} not found in gap_layer or gap_layer is empty after filtering. | {debug_msg}")
-
         extent = gap_layer.extent()
-        extent_valid = not extent.isNull() and (
-            math.isfinite(extent.xMinimum()) and
-            math.isfinite(extent.xMaximum()) and
-            math.isfinite(extent.yMinimum()) and
-            math.isfinite(extent.yMaximum()) and
-            extent.width() > 0 and
-            extent.height() > 0
-        )
-
-        if not extent_valid:
-            fallback_layers = [farmMain_layer, paddock_layer, uplantedPaddock_layer]
-            fallback_debug = []
-            extent = None
-            for layer in fallback_layers:
-                if layer is None:
-                    continue
-                candidate_extent = layer.extent()
-                candidate_valid = not candidate_extent.isNull() and candidate_extent.width() > 0 and candidate_extent.height() > 0
-                fallback_debug.append(
-                    f"{layer.name()}: valid={candidate_valid}, isNull={candidate_extent.isNull()}, width={candidate_extent.width()}, height={candidate_extent.height()}"
-                )
-                if candidate_valid:
-                    extent = candidate_extent
-                    break
-            if extent is None:
-                debug_msg = (
-                    f"PID debug: pid={pid}, company={companies_select}, "
-                    f"gap_layer_count={gap_count}, gap_extent_isNull={extent.isNull() if extent is not None else 'N/A'}, "
-                    f"gap_extent={str(gap_layer.extent())}, fallback_layers={'; '.join(fallback_debug)}"
-                )
-                raise ValueError(
-                    f"PID {pid} has no valid map extent in gap_layer or fallback layers. | {debug_msg}"
-                )
-
         extent.scale(1.1) # 10% margin
         map_item.zoomToExtent(extent)
 
         # Round up scale
         current_scale = map_item.scale()
-        if not math.isfinite(current_scale) or current_scale <= 0:
-            debug_msg = (
-                f"PID debug: pid={pid}, company={companies_select}, "
-                f"gap_layer_count={gap_count}, current_scale={current_scale}, "
-                f"extent={extent.asWkt() if hasattr(extent, 'asWkt') else str(extent)}"
-            )
-            raise ValueError(
-                f"PID {pid} produced an invalid map scale after zooming to extent. | {debug_msg}"
-            )
         rounded_scale = math.ceil(current_scale / 1000) * 1000
         map_item.setScale(rounded_scale)
 
@@ -1152,12 +1063,7 @@ def main():
     try:
         for companies_select in companies_run:
             target_bin = os.path.join(bin_dir + f'{companies_select}/{run_day_ymd}/')
-            print('target_bin:', target_bin)
-
-            log_dir = os.path.join(target_bin, 'pid_error_logs')
-            os.makedirs(log_dir, exist_ok=True)
-            log_file = os.path.join(log_dir, f'pid_error_log_{run_day_ymd}.txt')
-
+            print('target_bin:', target_bin) 
             parquet_file = glob.glob(os.path.join(target_bin, 'Gap-Detection_*.parquet'))[0]
             # Load via QGIS then convert
             layer = QgsVectorLayer(parquet_file, 'Gap-Detection', 'ogr')
@@ -1165,23 +1071,9 @@ def main():
             gapAR_result = gpd.read_file(layer.source())
             pid_run = list(set(gapAR_result['pid']))
             print('pid_run:', pid_run)
-
-            for pid in pid_run:
-                try:
-                    print(f"Running for company: {companies_select}, PID: {pid}")
-                    run_single_company(companies_select, pid)
-                except Exception as exc:
-                    error_message = (
-                        f"company={companies_select}\n"
-                        f"pid={pid}\n"
-                        f"error={type(exc).__name__}: {exc}\n"
-                        f"traceback:\n{traceback.format_exc()}\n"
-                        f"{'=' * 80}\n"
-                    )
-                    print(f"PID ERROR for company={companies_select}, pid={pid}: {exc}")
-                    with open(log_file, 'a', encoding='utf-8') as log:
-                        log.write(error_message)
-                    continue
+            for pid in pid_run:    
+                print(f"Running for company: {companies_select}")
+                run_single_company(companies_select, pid)
     finally:
         app.exitQgis()
 

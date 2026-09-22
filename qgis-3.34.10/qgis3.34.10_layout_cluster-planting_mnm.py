@@ -40,6 +40,7 @@ import math
 from pathlib import Path
 import sys
 import glob
+import pandas as pd
 
 project_root = Path(__file__).resolve().parents[1]
 if str(project_root) not in sys.path:
@@ -164,6 +165,8 @@ def run_single_company(companies_select, cluster_planting) -> None:
     percentagePlant     = plantHA / total_area * 100 if total_area else 0
     round_percentagePlant = round(percentagePlant, 2)
     # Photo oldest and newest
+    # Photo oldest and newest
+    gapAR_cluster["photo_date"] = pd.to_datetime(gapAR_cluster["photo_date"], errors="coerce")
     oldest_date = gapAR_cluster["photo_date"].min().strftime("%d %B %Y")
     newest_date = gapAR_cluster["photo_date"].max().strftime("%d %B %Y")
 

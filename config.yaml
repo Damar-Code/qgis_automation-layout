@@ -6,8 +6,8 @@ crs: EPSG:32754
 
 # ── Run Configuration ───
 companies_run:
-  # - GPA
-  - MNM
+  - GPA
+  # - MNM
 
 # ── Companies Alias ───
 companies_alias:
