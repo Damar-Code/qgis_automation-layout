@@ -1,0 +1,13 @@
+﻿python-qgis.bat : Traceback (most recent call last):
+At line:1 char:302
++ ... tch {} } }; & "C:\Program Files\QGIS 4.0.3\bin\python-qgis.bat" "D:\G ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "D:\GitHub\qgis_automation-layout\qgis-4.0.3\qgis3.34.10_layout_pid_v03_c2.py", line 1018, in <module>
+    main()
+  File "D:\GitHub\qgis_automation-layout\qgis-4.0.3\qgis3.34.10_layout_pid_v03_c2.py", line 823, in main
+    land_status_path = cfg['companies'][companies_select]['land_status']
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+KeyError: 'land_status'

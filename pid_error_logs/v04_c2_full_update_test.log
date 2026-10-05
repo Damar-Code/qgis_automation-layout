@@ -1,0 +1,28 @@
+﻿python-qgis.bat : Traceback (most recent call last):
+At line:1 char:302
++ ... tch {} } }; & "C:\Program Files\QGIS 4.0.3\bin\python-qgis.bat" "D:\G ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "D:\GitHub\qgis_automation-layout\qgis-4.0.3\qgis3.34.10_layout_pid_v04_c2.py", line 1089, in <module>
+    main()
+  File "D:\GitHub\qgis_automation-layout\qgis-4.0.3\qgis3.34.10_layout_pid_v04_c2.py", line 864, in main
+    paddock_gdf = gpd.read_file(gdb_path, layer='paddock')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PROGRA~1\QGIS40~1.3\apps\Python312\Lib\site-packages\geopandas\io\file.py", line 316, in _read_file
+    return _read_file_pyogrio(
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\PROGRA~1\QGIS40~1.3\apps\Python312\Lib\site-packages\geopandas\io\file.py", line 576, in _read_file_pyogrio
+    return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PROGRA~1\QGIS40~1.3\apps\Python312\Lib\site-packages\pyogrio\geopandas.py", line 382, in read_dataframe
+    result = read_func(
+             ^^^^^^^^^^
+  File "C:\PROGRA~1\QGIS40~1.3\apps\Python312\Lib\site-packages\pyogrio\raw.py", line 200, in read
+    return ogr_read(
+           ^^^^^^^^^
+  File "pyogrio/_io.pyx", line 1412, in pyogrio._io.ogr_read
+  File "pyogrio/_io.pyx", line 262, in pyogrio._io.ogr_open
+pyogrio.errors.DataSourceError: D:/automation of gap and weed detection/database/MNM/MNM Upadate  7 September.gdb: No 
+such file or directory
