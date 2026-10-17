@@ -505,6 +505,108 @@ def create_analysis_summary_table_image(
                                 col_width_scale=1.2)
 
 
+def _render_farm_table_image(headers, col_widths_in, farm, rows, output_path, dpi=150,
+                             fontsize=12, header_h=0.6, row_h=0.45):
+    """
+    Shared drawing routine for the farm-level tables: a shaded header row,
+    then a 'Farm' first column merged across every data row, followed by one
+    row per entry in rows.
+
+    The figure is saved at exactly its own size (no bbox_inches='tight'), so
+    image pixels / dpi == inches. The layout script relies on that to place
+    every table at one fixed mm-per-inch scale, keeping font sizes identical
+    across pages and farms.
+
+    Parameters
+    ----------
+    headers       : list of str — column headers, first one is the Farm column
+    col_widths_in : list of float — width of each column, inches
+    farm          : str — value shown in the merged Farm cell
+    rows          : list of list of str — values for columns 2..n, one per row
+    """
+    margin   = 0.03  # keeps the outer border lines inside the canvas
+    table_w  = sum(col_widths_in)
+    table_h  = header_h + row_h * len(rows)
+    fig_w    = table_w + 2 * margin
+    fig_h    = table_h + 2 * margin
+
+    fig = plt.figure(figsize=(fig_w, fig_h))
+    ax  = fig.add_axes([0, 0, 1, 1])
+    ax.set_xlim(0, fig_w)
+    ax.set_ylim(0, fig_h)
+    ax.axis('off')
+
+    header_color = '#DCE6F1'
+    cell_color   = '#FFFFFF'
+
+    def draw_cell(x, y, w, h, text, bg, bold=False):
+        ax.add_patch(patches.Rectangle(
+            (x, y - h), w, h, linewidth=0.6, edgecolor='black', facecolor=bg
+        ))
+        ax.text(x + w / 2, y - h / 2, text, ha='center', va='center',
+                fontsize=fontsize, color='black', fontweight='bold' if bold else 'normal')
+
+    col_x = [margin]
+    for w in col_widths_in[:-1]:
+        col_x.append(col_x[-1] + w)
+
+    top_y = fig_h - margin
+    for x, w, label in zip(col_x, col_widths_in, headers):
+        draw_cell(x, top_y, w, header_h, label, bg=header_color, bold=True)
+
+    rows_top = top_y - header_h
+    draw_cell(col_x[0], rows_top, col_widths_in[0], row_h * len(rows), str(farm), bg=cell_color)
+    for i, row in enumerate(rows):
+        row_y = rows_top - i * row_h
+        for x, w, value in zip(col_x[1:], col_widths_in[1:], row):
+            draw_cell(x, row_y, w, row_h, value, bg=cell_color)
+
+    fig.savefig(output_path, dpi=dpi, facecolor='white', edgecolor='none')
+    plt.close(fig)
+    print(f"✅ Saved: {output_path}")
+
+
+def create_farm_block_table_image(farm, block_rows, output_path, dpi=150):
+    """
+    Farm-level page 1 table: one row per block in the farm.
+
+    Parameters
+    ----------
+    farm       : str — farm code, shown in the merged Farm cell
+    block_rows : list of dict with keys block, total_area, planted_area,
+                 growth_area, gap_area, growth_pct, gap_pct. Growth/gap
+                 values may be '-' for blocks with no commercial gap result.
+    """
+    headers = ['Farm', 'Block', 'Total\nArea (Ha)', 'Planted\nArea (Ha)',
+               'Growth\nArea (Ha)', 'Gap\nArea (Ha)', 'Growth\n%', 'Gap\n%']
+    col_widths_in = [1.25, 1.25, 1.65, 1.65, 1.65, 1.65, 1.45, 1.45]
+    rows = [[
+        str(r['block']),
+        fmt(r['total_area']),
+        fmt(r['planted_area']),
+        fmt(r['growth_area']),
+        fmt(r['gap_area']),
+        fmt(r['growth_pct']),
+        fmt(r['gap_pct']),
+    ] for r in block_rows]
+    _render_farm_table_image(headers, col_widths_in, farm, rows, output_path, dpi=dpi)
+
+
+def create_farm_growth_class_table_image(farm, class_rows, output_path, dpi=150):
+    """
+    Farm-level page 2 table: analysed area per growth classification.
+
+    Parameters
+    ----------
+    farm       : str — farm code, shown in the merged Farm cell
+    class_rows : list of (label, area_ha, area_pct)
+    """
+    headers = ['Farm', 'Classification', 'Area Ha', 'Area %']
+    col_widths_in = [1.25, 1.95, 1.5, 1.45]
+    rows = [[label, fmt(area_ha), fmt(area_pct)] for label, area_ha, area_pct in class_rows]
+    _render_farm_table_image(headers, col_widths_in, farm, rows, output_path, dpi=dpi)
+
+
 if __name__ == "__main__":
     # ── Usage ─────────────────────────────────────────────────────────────────
     import geopandas as gpd

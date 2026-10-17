@@ -208,5 +208,25 @@ def create_seed_legend_image(output_path, dpi=150):
                           label_fontsize=8, show_title=False)
 
 
+# Farm-level page 2: growth % per cluster_planting, binned into these classes.
+# (label, lower bound inclusive, upper bound exclusive / None = no limit, color)
+# Must match the categorized renderer in qgis3.34.10_layout_farm-level.py.
+GROWTH_CLASSES = [
+    ('<60%',   None, 60,   '#FFC526'),
+    ('60-80%', 60,   80,   '#F37835'),
+    ('80-90%', 80,   90,   '#00AEDB'),
+    ('>90%',   90,   None, '#00B159'),
+]
+
+
+def create_growth_classification_legend_image(output_path, dpi=150):
+    """
+    Create the 'Growth Classification' legend for the farm-level page 2 map
+    (one swatch per GROWTH_CLASSES entry).
+    """
+    items = [(label, color, 'box') for label, _, _, color in GROWTH_CLASSES]
+    _render_legend_image(output_path, 'Growth Classification', items, dpi=dpi)
+
+
 if __name__ == "__main__":
     create_legend_image(r'D:\legend_test.png', has_seed=True, dpi=150)

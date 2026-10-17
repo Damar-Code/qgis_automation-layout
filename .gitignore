@@ -3,3 +3,7 @@ config.yaml
 
 # generated scratch/cache data, rebuilt on every run
 lib/tmp/
+
+# python bytecode
+__pycache__/
+*.pyc
