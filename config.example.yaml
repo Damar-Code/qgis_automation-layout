@@ -1,0 +1,70 @@
+# Template for config.yaml — copy this file to config.yaml and fill in your
+# own values. config.yaml itself is git-ignored (it holds local paths and
+# company names); keep real values out of this example file.
+
+# ── Run Configuration ───
+qgis_apps: C:/Program Files/QGIS 3.44.15/apps/qgis-ltr
+
+# coordinate reference system (CRS) for the project
+crs: EPSG:32754
+
+# ── Run Configuration ───
+companies_run:
+  - COMPANY_A
+  # - COMPANY_B
+
+# ── Companies Alias ───
+# c1 / c2 are what the scripts refer to; the value is the key under
+# `companies:` below and is also used as the output file name prefix.
+companies_alias:
+  c1: "COMPANY_A"
+  c2: "COMPANY_B"
+
+# Notification Configuration
+logo          : C:/path/to/input/logo/comp_logo.jpg
+north_arrow   : C:/path/to/input/svg/NorthArrow_11.svg
+dam_c1_path   : C:/path/to/database/COMPANY_A/infra/DAM.shp
+bin_dir       : C:/path/to/bin/
+
+# ── Companies-specific configuration ───
+companies:
+  COMPANY_A:
+    map_title           : 'PT. COMPANY A'
+    map_path            : C:/path/to/maps/COMPANY_A/
+    landuse_path        : C:/path/to/database/COMPANY_A/<delivery date>/60_landuse.gdb
+    sugarcane_gdb_path  : C:/path/to/database/COMPANY_A/Sugarcane-Raw_PT.gpkg
+    gpkg_gaps_path      : C:/path/to/database/COMPANY_A/Gaps-Detection_AR.gpkg
+    gpkg_gaps_planting_path : C:/path/to/database/COMPANY_A/Gaps-Detection_Planting_AR.gpkg
+    infra_path              : C:/path/to/database/COMPANY_A/<delivery date>/50_infrastructure.gdb
+    planting_path           : C:/path/to/database/COMPANY_A/<delivery date>/20_planting.gdb
+    water_body_path         : C:/path/to/database/COMPANY_A/water_body.gpkg
+    map_index_extent    :
+      - 0.0 # xmin
+      - 0.0 # ymin
+      - 0.0 # xmax
+      - 0.0 # ymax
+  COMPANY_B:
+    map_title           : 'PT. COMPANY B'
+    map_path            : C:/path/to/maps/COMPANY_B/
+    gdb_path            : C:/path/to/database/COMPANY_B/COMPANY_B.gdb
+    landuse_path        : C:/path/to/database/COMPANY_B/<delivery date>/60_landuse.gdb
+    infra_path          : C:/path/to/database/COMPANY_B/<delivery date>/50_infrastructure.gdb
+    planting_gdb_path   : C:/path/to/database/COMPANY_B/<delivery date>/20_planting.gdb
+    sugarcane_gdb_path  : C:/path/to/database/COMPANY_B/Sugarcane-Raw_PT.gpkg
+    gpkg_gaps_path      : C:/path/to/database/COMPANY_B/Gaps-Detection_AR.gpkg
+    gpkg_gaps_planting_path : C:/path/to/database/COMPANY_B/Gaps-Detection_Planting_AR.gpkg
+    soil_rehabilitation_path: C:/path/to/database/COMPANY_B/soil_rehabilitation.gpkg
+    land_status_path: C:/path/to/database/COMPANY_B/land_status.gpkg
+    land_status_v2_path: C:/path/to/database/COMPANY_B/planting_land-status.parquet
+    activity_summary_path: C:/path/to/table/Activity_Summary_by_Paddock.xlsx
+    ripper_activity_path: C:/path/to/database/COMPANY_B/activities/Ripper.parquet
+    soil_ameliorant_activity_path: C:/path/to/database/COMPANY_B/activities/Soil Ameliorant.parquet
+    harrow_activity_path: C:/path/to/database/COMPANY_B/activities/Harrow.parquet
+    grubber_activity_path: C:/path/to/database/COMPANY_B/activities/Grubber.parquet
+    basal_activity_path: C:/path/to/database/COMPANY_B/activities/Basal.parquet
+    planting_path: C:/path/to/database/COMPANY_B/planting.parquet
+    map_index_extent    :
+      - 0.0 # xmin
+      - 0.0 # ymin
+      - 0.0 # xmax
+      - 0.0 # ymax

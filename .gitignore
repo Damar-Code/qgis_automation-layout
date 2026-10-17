@@ -7,3 +7,6 @@ lib/tmp/
 # python bytecode
 __pycache__/
 *.pyc
+
+# run logs (contain real PIDs and paths)
+pid_error_logs/

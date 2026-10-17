@@ -148,11 +148,11 @@ def create_gap_table_image(
     dpi             : int        — image resolution
     planted_area_override : float, optional — use this value (hectares) for the
                       Planted Area column instead of computing it from paddok's
-                      LANDUSETYP == 'CP' rows. Needed for companies (e.g. COMPANY_B)
+                      LANDUSETYP == 'CP' rows. Needed for companies (e.g. c2)
                       whose paddock layer has no 'CP' landuse type at all.
     commercial_status_value : str — the 'Status' value identifying commercial
-                      plantings in this company's planting database. COMPANY_A uses
-                      'Commercial Plantation'; COMPANY_B uses just 'Commercial'.
+                      plantings in this company's planting database. c1 uses
+                      'Commercial Plantation'; c2 uses just 'Commercial'.
                       Ignored when commercial_date_cutoff is set.
     commercial_date_cutoff : str/date, optional — if set, rows are selected by
                       plant_date >= this cutoff instead of by Status. Kept as an
@@ -612,14 +612,14 @@ if __name__ == "__main__":
     import geopandas as gpd
     from planting_handler import planting_handler
 
-    planting_gdb_path       = r"D:\automation of gap and weed detection\database\COMPANY_A\20_planting.gdb"
-    landuse_gdb_path        = r"D:\automation of gap and weed detection\database\COMPANY_A\60_landuse.gdb"
-    gpkg_gaps_planting_path = r"D:\automation of gap and weed detection\database\COMPANY_A\Gaps-Detection_COMPANY_A_Planting_AR.gpkg"
-    merge_cucp_path         = r'D:\automation of gap and weed detection\database\COMPANY_A\paddock_cucp.gpkg'
+    planting_gdb_path       = r"C:\path\to\database\20_planting.gdb"
+    landuse_gdb_path        = r"C:\path\to\database\60_landuse.gdb"
+    gpkg_gaps_planting_path = r"C:\path\to\database\Gaps-Detection_Planting_AR.gpkg"
+    merge_cucp_path         = r'C:\path\to\database\paddock_cucp.gpkg'
 
     merge_cucp = gpd.read_file(merge_cucp_path)
     paddok     = gpd.read_file(landuse_gdb_path, layer='paddock')
-    gap        = gpd.read_file(gpkg_gaps_planting_path, layer='Gaps-Detection_COMPANY_A_20260915_Planting_AR')
+    gap        = gpd.read_file(gpkg_gaps_planting_path, layer='Gaps-Detection_20260915_Planting_AR')
     planting   = planting_handler(planting_gdb_path)
 
     create_gap_table_image(

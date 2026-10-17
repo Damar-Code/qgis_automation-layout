@@ -63,7 +63,7 @@ logo_path           = cfg['logo']
 north_arrow         = cfg['north_arrow']
 qgis_apps           = cfg['qgis_apps']
 qml_dir             = cfg['qml_dir']
-dam_c1_path        = cfg['dam_c1_path']
+dam_c1_path         = cfg['dam_c1_path']
 c1                  = cfg['companies_alias']['c1']
 c2                  = cfg['companies_alias']['c2']
 
@@ -961,10 +961,7 @@ def run_single_company(companies_select) -> None:
 
     exporter = QgsLayoutExporter(layout)
     # exporter.exportToPdf(os.path.join(parent_dir + "/output/automation_map.pdf"), QgsLayoutExporter.PdfExportSettings())
-    if companies_select == c1:
-        output_pdf = os.path.join(map_path + f"COMPANY_A_Gap Detection Map_{run_day}.pdf")
-    elif companies_select == c2:
-        output_pdf = os.path.join(map_path + f"COMPANY_B_Gap Detection Map_{run_day}.pdf")
+    output_pdf = os.path.join(map_path + f"{companies_select}_Gap Detection Map_{run_day}.pdf")
 
     result = exporter.exportToPdf(
         output_pdf,

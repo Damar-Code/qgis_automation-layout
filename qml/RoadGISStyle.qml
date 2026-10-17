@@ -144,7 +144,7 @@
       </symbol>
     </profileMarkerSymbol>
   </elevation>
-  <renderer-v2 attr="class" enableorderby="0" forceraster="0" referencescale="-1" symbollevels="0" type="categorizedSymbol">
+  <renderer-v2 attr="CASE WHEN &quot;class&quot; LIKE '%Corridor Road' THEN 'Corridor Road' ELSE &quot;class&quot; END" enableorderby="0" forceraster="0" referencescale="-1" symbollevels="0" type="categorizedSymbol">
     <categories>
       <category label="Corridor Road" render="true" symbol="0" type="string" uuid="{5a718931-57be-4824-8a7f-ae453d98f06c}" value="Corridor Road"/>
       <category label="Main Road" render="true" symbol="1" type="string" uuid="{34a561db-7437-4868-85a2-714ec8d57e78}" value="Main Road"/>

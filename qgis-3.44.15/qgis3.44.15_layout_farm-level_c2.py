@@ -75,7 +75,7 @@ run_day_ymd = today.strftime("%Y%m%d")
 # PDF holds both pages in one file; JPG writes one file per page (<name>_2.jpg).
 EXPORT_FORMATS = ['pdf']
 
-# ── Commercial-plantings filter for c2 (COMPANY_B), same switch as the c2 PID scripts ─
+# ── Commercial-plantings filter for c2, same switch as the c2 PID scripts ─
 # 'date'   : plant_date on/after COMMERCIAL_DATE_CUTOFF counts as commercial,
 #            before it counts as seed.
 # 'status' : the planting database's Status ('Commercial' / 'Seed').
@@ -189,7 +189,7 @@ def run_single_farm(companies_select, farm, paddock_cucp_path, paddock_cp_path, 
     }))
     project.addMapLayer(seed_layer)
 
-    ## Page 1 — Next Target: planting boundary per PID (COMPANY_B has no CP paddocks)
+    ## Page 1 — Next Target: planting boundary per PID (c2 has no CP paddocks)
     paddock_cp_layer = load_layer(paddock_cp_path, 'paddock_cp', 'Paddock CP', farm_filter_paddock)
     paddock_cp_layer.renderer().setSymbol(QgsFillSymbol.createSimple({
         "color": "#e2ff9f",
@@ -219,7 +219,7 @@ def run_single_farm(companies_select, farm, paddock_cucp_path, paddock_cp_path, 
 
     drainage_layer = load_layer(infra_path, 'drainage', 'Drainage')
     drainage_layer.loadNamedStyle(os.path.join(qml_dir, "drainageStyle.qml"))
-    # drainageStyle.qml categorizes on "TIPE"; COMPANY_B's drainage stores D-1/D-2/D-3 in "DRAIN_TIPE"
+    # drainageStyle.qml categorizes on "TIPE"; c2's drainage stores D-1/D-2/D-3 in "DRAIN_TIPE"
     if drainage_layer.fields().indexOf('TIPE') < 0 and drainage_layer.fields().indexOf('DRAIN_TIPE') >= 0:
         drainage_layer.renderer().setClassAttribute('DRAIN_TIPE')
     project.addMapLayer(drainage_layer)
@@ -446,7 +446,7 @@ def run_single_farm(companies_select, farm, paddock_cucp_path, paddock_cp_path, 
 
 def build_block_rows(farm, paddock_gdf, planted_area_by_block, commercial_gap_gdf):
     """Page 1 table rows: per block, CU+CP paddock area (total), planting
-    boundary area (planted — COMPANY_B has no CP paddocks), plus growth/gap area
+    boundary area (planted — c2 has no CP paddocks), plus growth/gap area
     from commercial gap features.
 
     planted_area_by_block : Series indexed by (FARM, BLOCK), hectares
@@ -516,7 +516,7 @@ def main():
         planting_path           = cfg['companies'][companies_select]['planting_gdb_path']
         planting_gdf = planting_handler(planting_path).to_crs(paddock_gdf.crs)
 
-        # COMPANY_B's paddock layer has no 'CP' (planted) LANDUSETYP, so the planting
+        # c2's paddock layer has no 'CP' (planted) LANDUSETYP, so the planting
         # boundary stands in for it: dissolved per PID for the Next Target map
         # layer, and per block for the table's Planted Area. FARM/BLOCK come
         # from the paddock layer by PID.

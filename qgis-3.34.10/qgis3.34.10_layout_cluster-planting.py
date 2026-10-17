@@ -58,7 +58,7 @@ north_arrow     = cfg['north_arrow']
 qgis_apps       = cfg['qgis_apps']
 qml_dir         = cfg['qml_dir']
 bin_dir         = cfg['bin_dir']
-dam_c1_path    = cfg['dam_c1_path']
+dam_c1_path     = cfg['dam_c1_path']
 c1              = cfg['companies_alias']['c1']
 c2              = cfg['companies_alias']['c2']
 

@@ -75,7 +75,7 @@ run_day_ymd = today.strftime("%Y%m%d")
 # ── Export formats: any combination of 'pdf', 'jpg' ────────────────────────────
 EXPORT_FORMATS = ['jpg'] # 'pdf'
 
-# ── Commercial-plantings filter for c2 (COMPANY_B) ────────────────────────────────────
+# ── Commercial-plantings filter for c2 ────────────────────────────────────
 # 'date'   : plant_date on/after COMMERCIAL_DATE_CUTOFF counts as commercial
 #            (gap_layer), before it counts as seed (seed_layer).
 # 'status' : the original Status == COMMERCIAL_STATUS_VALUE / 'Seed Production'
@@ -633,7 +633,7 @@ def main():
         gap_gdf = gpd.read_file(gpkg_gaps_planting_path, layer=fiona_latest_gap)
         planting_gdf = gpd.read_file(gdb_path, layer='planting')
 
-        # COMPANY_B's paddock layer has no 'CP' (planted) LANDUSETYP at all, so
+        # c2's paddock layer has no 'CP' (planted) LANDUSETYP at all, so
         # "Next Target" is instead defined as the planting boundary itself
         # (per PID), and its area value as planting area minus what gap
         # detection has already captured for that PID.
