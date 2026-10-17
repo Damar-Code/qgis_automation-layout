@@ -247,19 +247,21 @@ def run_single_farm(companies_select, farm, paddock_cucp_path, paddock_cp_path, 
     }))
     project.addMapLayer(index_selected_layer)
 
-    # ── Main map extent: the selected farm's boundary ─────────────────────────
+    # ── Main map extent: this farm's monitored area (gap detection features,
+    # commercial + seed), which is much smaller than the farm boundary ────────
     selected_farm_layer = load_layer(landuse_path, 'Farm', 'Selected Farm', farm_filter_paddock)
-    extent = _farm_extent(selected_farm_layer)
+    extent = _farm_extent(gap_layer)
+    extent.combineExtentWith(_farm_extent(seed_layer))
     extent_valid = not extent.isNull() and extent.width() > 0 and extent.height() > 0 and all(
         math.isfinite(v) for v in (extent.xMinimum(), extent.xMaximum(), extent.yMinimum(), extent.yMaximum())
     )
     if not extent_valid:
         raise ValueError(
-            f"FARM {farm} has no valid map extent in the landuse Farm layer. | "
-            f"company={companies_select}, feature_count={selected_farm_layer.featureCount()}, "
-            f"filter={farm_filter_paddock}"
+            f"FARM {farm} has no valid map extent from its gap detection features. | "
+            f"company={companies_select}, gap_count={gap_layer.featureCount()}, "
+            f"seed_count={seed_layer.featureCount()}, filter={farm_filter_gap}"
         )
-    extent.scale(1.05)  # 5% margin
+    extent.scale(1.1)  # 10% margin
 
     ## Farm boundary (landuse 'Farm' layer) — bold black outline, no fill
     selected_farm_layer.renderer().setSymbol(QgsFillSymbol.createSimple({
