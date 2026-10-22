@@ -130,6 +130,7 @@ def create_gap_table_image(
     commercial_status_value: str = 'Commercial Plantation',
     commercial_date_cutoff: object = None,
     include_classification: bool = True,
+    include_classification_column: bool = True,
 ):
     """
     Create gap detection summary table as image.
@@ -164,6 +165,9 @@ def create_gap_table_image(
                       (the per-row "Classification" column in the value
                       table itself is unaffected). Used for report pages
                       that show their own legend in that space instead.
+    include_classification_column : bool — when False, also drops the
+                      per-row "Classification" column from the value table
+                      (e.g. pages that classify on the map instead).
 
     Returns
     -------
@@ -206,7 +210,7 @@ def create_gap_table_image(
     cls_table_h   = cls_header_h + (cls_row_h * len(classification_rows)) + cls_note_h
 
     # ── Figure setup ──────────────────────────────────────────────────────────
-    table_w      = 13.7
+    table_w      = 13.7 if include_classification_column else 12.05
     gap_w        = 0.15 if include_classification else 0.0
     right_margin = 0.15  # keeps the classification table's right border off the clip edge
     fig_w    = table_w + gap_w + cls_table_w + right_margin
@@ -238,6 +242,9 @@ def create_gap_table_image(
         (11.15, 0.75, 'Gap\n%'),
         (11.90, 1.50, 'Classification'),
     ]
+    if not include_classification_column:
+        cols = cols[:-1]
+    value_cols = cols[3:-1] if include_classification_column else cols[3:]
 
     top_y = fig_h - 0.2
 
@@ -289,14 +296,15 @@ def create_gap_table_image(
             fmt(row.get('gap_pct')),
         ]
 
-        for j, (x, w, _) in enumerate(cols[3:-1]):
+        for j, (x, w, _) in enumerate(value_cols):
             draw_cell(x, row_y, w, row_h, values[j],
                       bg=bg, fc='black', fontsize=8)
 
         # Classification: no colored background — just bold black text.
-        cls_x_col, cls_w_col, _ = cols[-1]
-        draw_cell(cls_x_col, row_y, cls_w_col, row_h, cls_label,
-                  bg=bg, fc='black', bold=True, fontsize=8)
+        if include_classification_column:
+            cls_x_col, cls_w_col, _ = cols[-1]
+            draw_cell(cls_x_col, row_y, cls_w_col, row_h, cls_label,
+                      bg=bg, fc='black', bold=True, fontsize=8)
 
     # ── Classification legend table ────────────────────────────────────────
     if include_classification:
@@ -592,17 +600,19 @@ def create_farm_block_table_image(farm, block_rows, output_path, dpi=150):
     _render_farm_table_image(headers, col_widths_in, farm, rows, output_path, dpi=dpi)
 
 
-def create_farm_growth_class_table_image(farm, class_rows, output_path, dpi=150):
+def create_farm_growth_class_table_image(farm, class_rows, output_path, dpi=150,
+                                         first_col_header='Farm', first_col_width_in=1.25):
     """
     Farm-level page 2 table: analysed area per growth classification.
+    Also used at PID level (first_col_header='PID', wider first column).
 
     Parameters
     ----------
-    farm       : str — farm code, shown in the merged Farm cell
+    farm       : str — farm (or PID) code, shown in the merged first cell
     class_rows : list of (label, area_ha, area_pct)
     """
-    headers = ['Farm', 'Classification', 'Area Ha', 'Area %']
-    col_widths_in = [1.25, 1.95, 1.5, 1.45]
+    headers = [first_col_header, 'Classification', 'Area Ha', 'Area %']
+    col_widths_in = [first_col_width_in, 1.95, 1.5, 1.45]
     rows = [[label, fmt(area_ha), fmt(area_pct)] for label, area_ha, area_pct in class_rows]
     _render_farm_table_image(headers, col_widths_in, farm, rows, output_path, dpi=dpi)
 
