@@ -1,4 +1,4 @@
-# QGIS Map Automation — Gap Detection Layouts
+# QGIS Map Automation
 
 Standalone PyQGIS scripts that turn sugarcane **gap detection** results into
 print-ready A1 maps (PDF/JPG) — no manual work in the QGIS layout designer.
