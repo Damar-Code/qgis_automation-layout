@@ -35,13 +35,17 @@ def format_planting_periode(oldest_date, newest_date):
         return oldest_date  # single date
     return f'{oldest_date} - {newest_date}'
 
-def _build_rows(pid, gap, planting, commercial_status_value='Commercial Plantation', commercial_date_cutoff=None):
+def _build_rows(pid, gap, planting, commercial_status_value='Commercial Plantation', commercial_date_cutoff=None,
+                min_variety_area_ha=0.0):
     """Build rows data from gap and planting GeoDataFrames.
 
     Returns (rows, variety_index_map), where variety_index_map maps each
     variety to the (1)-based index shown in its planting_periode label,
     ordered by that variety's oldest plant_date — the same index used to
     label matching gap_layer features on the map.
+
+    Varieties whose analysed (growth + gap) area is below min_variety_area_ha
+    get no row and no index — sliver features otherwise show as 0.00 ha / 100 %.
     """
 
     if commercial_date_cutoff is not None:
@@ -54,6 +58,9 @@ def _build_rows(pid, gap, planting, commercial_status_value='Commercial Plantati
         gap_slct = gap[(gap['pid'] == pid) & (gap['Status'] == commercial_status_value)]
 
     varieties_done = list(set(gap_slct['variety']))
+    if min_variety_area_ha > 0:
+        analysed_by_variety = gap_slct.groupby('variety')['cls_area_ha'].sum()
+        varieties_done = [v for v in varieties_done if analysed_by_variety.get(v, 0.0) >= min_variety_area_ha]
 
     # ── Order varieties chronologically by their oldest plant_date, so the
     # (1), (2), (3)... index matches planting order ──────────────────────────
@@ -131,6 +138,7 @@ def create_gap_table_image(
     commercial_date_cutoff: object = None,
     include_classification: bool = True,
     include_classification_column: bool = True,
+    min_variety_area_ha: float = 0.0,
 ):
     """
     Create gap detection summary table as image.
@@ -168,6 +176,8 @@ def create_gap_table_image(
     include_classification_column : bool — when False, also drops the
                       per-row "Classification" column from the value table
                       (e.g. pages that classify on the map instead).
+    min_variety_area_ha : float — varieties with less analysed area than
+                      this get no row (and no map index). 0 keeps them all.
 
     Returns
     -------
@@ -189,7 +199,8 @@ def create_gap_table_image(
     rows, variety_index_map = _build_rows(
         pid, gap, planting,
         commercial_status_value=commercial_status_value,
-        commercial_date_cutoff=commercial_date_cutoff
+        commercial_date_cutoff=commercial_date_cutoff,
+        min_variety_area_ha=min_variety_area_ha,
     )
     n_rows = len(rows)
 
