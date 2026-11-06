@@ -53,6 +53,9 @@ companies:
     sugarcane_gdb_path  : C:/path/to/database/COMPANY_B/Sugarcane-Raw_PT.gpkg
     gpkg_gaps_path      : C:/path/to/database/COMPANY_B/Gaps-Detection_AR.gpkg
     gpkg_gaps_planting_path : C:/path/to/database/COMPANY_B/Gaps-Detection_Planting_AR.gpkg
+    # PID-level 4-month run: gap data source, and the file listing the target PIDs
+    gpkg_gaps_planting_latest_path : C:/path/to/database/COMPANY_B/gap-detection_planting_latest.gpkg
+    gpkg_gaps_planting_4mth_path   : C:/path/to/database/COMPANY_B/gap-detection_planting_4mth.gpkg
     soil_rehabilitation_path: C:/path/to/database/COMPANY_B/soil_rehabilitation.gpkg
     land_status_path: C:/path/to/database/COMPANY_B/land_status.gpkg
     land_status_v2_path: C:/path/to/database/COMPANY_B/planting_land-status.parquet
